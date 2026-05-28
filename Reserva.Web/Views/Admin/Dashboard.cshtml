@@ -1,0 +1,112 @@
+@using Reserva.Domain.Entities
+@{
+    ViewData["Title"] = "Dashboard";
+    var ultimasReservas = ViewBag.UltimasReservas as IReadOnlyList<Reserva> ?? [];
+    var reservasPendientes = ViewBag.ReservasPendientes as IReadOnlyList<Reserva> ?? [];
+    var calendarioReservas = ViewBag.CalendarioReservas as IReadOnlyList<Reserva> ?? [];
+    var diasCalendario = Enumerable.Range(0, 7).Select(offset => DateOnly.FromDateTime(DateTime.Today).AddDays(offset)).ToList();
+}
+
+<section class="container admin-dashboard">
+    <div class="dashboard-hero">
+        <div>
+            <p class="eyebrow">Panel operativo</p>
+            <h1>Gestion del restaurante Mikuy</h1>
+            <p>Confirme reservas, ajuste mesas y mantenga el menu publico al dia.</p>
+        </div>
+        <div class="dashboard-actions">
+            <a asp-controller="Reservas" asp-action="Create" class="btn btn-accent">Nueva reserva</a>
+            <a asp-controller="Mesas" asp-action="Create" class="btn btn-outline-dark">Nueva mesa</a>
+        </div>
+    </div>
+
+    @await Component.InvokeAsync("DashboardStats")
+
+    @if (reservasPendientes.Count > 0)
+    {
+        <section class="admin-alert-panel">
+            <div>
+                <p class="eyebrow">Notificacion interna</p>
+                <h2>@reservasPendientes.Count reserva(s) pendiente(s) por confirmar</h2>
+                <p>Revise las solicitudes nuevas para avisar al cliente por correo o WhatsApp.</p>
+            </div>
+            <div class="pending-list">
+                @foreach (var reserva in reservasPendientes)
+                {
+                    <a asp-controller="Reservas" asp-action="Edit" asp-route-id="@reserva.IdReserva">
+                        <strong>@reserva.CodigoReserva</strong>
+                        <span>@reserva.Cliente?.Nombre - @reserva.Fecha.ToString("dd/MM") @reserva.Hora.ToString("HH:mm")</span>
+                    </a>
+                }
+            </div>
+        </section>
+    }
+
+    <div class="admin-grid">
+        <section class="page-shell">
+            <div class="section-heading compact">
+                <h2>Ultimas reservas</h2>
+                <a asp-controller="Reservas" asp-action="Index">Ver todas</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table app-table align-middle">
+                    <thead>
+                        <tr><th>Cliente</th><th>Fecha</th><th>Mesa</th><th>Estado</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var reserva in ultimasReservas)
+                        {
+                            <tr>
+                                <td>@reserva.Cliente?.Nombre</td>
+                                <td>@reserva.Fecha.ToString("dd/MM/yyyy") @reserva.Hora.ToString("HH:mm")</td>
+                                <td>Mesa @reserva.Mesa?.Numero</td>
+                                <td><span class="status-badge status-@reserva.Estado.ToLowerInvariant()">@reserva.Estado</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        <section class="page-shell quick-panel">
+            <h2>Accesos rapidos</h2>
+            <a asp-controller="Reservas" asp-action="Index">Gestionar reservas</a>
+            <a asp-controller="Clientes" asp-action="Index">Gestionar clientes</a>
+            <a asp-controller="Mesas" asp-action="Index">Gestionar mesas</a>
+            <a asp-controller="Platos" asp-action="Admin">Gestionar platos</a>
+        </section>
+    </div>
+
+    <section class="page-shell mt-3">
+        <div class="section-heading compact">
+            <h2>Calendario operativo</h2>
+            <a asp-controller="Reservas" asp-action="Index">Abrir agenda</a>
+        </div>
+        <div class="calendar-board">
+            @foreach (var dia in diasCalendario)
+            {
+                var reservasDia = calendarioReservas.Where(reserva => reserva.Fecha == dia).ToList();
+                <article class="calendar-day">
+                    <header>
+                        <span>@dia.ToString("ddd").ToUpperInvariant()</span>
+                        <strong>@dia.ToString("dd/MM")</strong>
+                    </header>
+                    @if (reservasDia.Count == 0)
+                    {
+                        <p class="empty-day">Sin reservas</p>
+                    }
+                    else
+                    {
+                        foreach (var reserva in reservasDia)
+                        {
+                            <a asp-controller="Reservas" asp-action="Details" asp-route-id="@reserva.IdReserva" class="calendar-slot status-border-@reserva.Estado.ToLowerInvariant()">
+                                <strong>@reserva.Hora.ToString("HH:mm")</strong>
+                                <span>@reserva.Cliente?.Nombre</span>
+                                <small>Mesa @reserva.Mesa?.Numero - @reserva.Estado</small>
+                            </a>
+                        }
+                    }
+                </article>
+            }
+        </div>
+    </section>
+</section>

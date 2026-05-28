@@ -1,0 +1,31 @@
+@model Reserva.Domain.Entities.Mesa
+<section class="container page-shell form-card admin-page">
+    <h1 class="h2">@ViewData["Heading"]</h1>
+    <form asp-action="@ViewData["Action"]" asp-route-id="@Model.IdMesa" method="post" class="row g-3">
+        <input asp-for="IdMesa" type="hidden" />
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-md-4">
+            <label asp-for="Numero" class="form-label"></label>
+            <input asp-for="Numero" class="form-control" />
+            <span asp-validation-for="Numero" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Capacidad" class="form-label"></label>
+            <input asp-for="Capacidad" class="form-control" />
+            <span asp-validation-for="Capacidad" class="text-danger"></span>
+        </div>
+        <div class="col-md-4">
+            <label asp-for="Ubicacion" class="form-label"></label>
+            <input asp-for="Ubicacion" class="form-control" />
+            <span asp-validation-for="Ubicacion" class="text-danger"></span>
+        </div>
+        <div class="col-12 form-check ms-2">
+            <input asp-for="Activa" class="form-check-input" />
+            <label asp-for="Activa" class="form-check-label"></label>
+        </div>
+        <div class="col-12 d-flex gap-2 justify-content-end">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-accent">Guardar</button>
+        </div>
+    </form>
+</section>

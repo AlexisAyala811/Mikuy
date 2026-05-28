@@ -1,0 +1,36 @@
+@model ClienteDto
+@{
+    ViewData["Title"] = "Registro de cliente";
+}
+
+<section class="container auth-wrap">
+    <div class="page-shell form-card">
+        <p class="eyebrow">Cliente Mikuy</p>
+        <h1 class="h2">Registro</h1>
+        <form asp-action="Registro" method="post" class="row g-3">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="col-12">
+                <label asp-for="Nombre" class="form-label"></label>
+                <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="Telefono" class="form-label"></label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+            <div class="col-12 col-md-6">
+                <label asp-for="Correo" class="form-label"></label>
+                <input asp-for="Correo" class="form-control" />
+                <span asp-validation-for="Correo" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-accent w-100" type="submit">Registrarme</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

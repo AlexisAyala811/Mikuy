@@ -1,0 +1,24 @@
+@model DashboardStatsViewModel
+
+<div class="dashboard-grid">
+    <article class="metric-card">
+        <span class="metric-label">Reservas de hoy</span>
+        <strong>@Model.ReservasHoy</strong>
+        <small>Agenda del dia</small>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Mesas activas</span>
+        <strong>@Model.MesasActivas</strong>
+        <small>Disponibles para asignar</small>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Platos activos</span>
+        <strong>@Model.PlatosActivos</strong>
+        <small>Menu publicado</small>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Por confirmar</span>
+        <strong>@Model.ReservasPendientes</strong>
+        <small>@Model.TotalClientes clientes registrados</small>
+    </article>
+</div>

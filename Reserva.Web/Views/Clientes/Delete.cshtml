@@ -1,0 +1,27 @@
+@model ClienteDto
+
+@{
+    ViewData["Title"] = "Eliminar cliente";
+}
+
+<section class="page-shell form-card">
+    <h1 class="h3 mb-2">Eliminar cliente</h1>
+    <p class="text-muted">Confirma si deseas eliminar este cliente.</p>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+    <dl class="row">
+        <dt class="col-sm-3">Nombre</dt>
+        <dd class="col-sm-9">@Model.Nombre</dd>
+        <dt class="col-sm-3">Telefono</dt>
+        <dd class="col-sm-9">@Model.Telefono</dd>
+        <dt class="col-sm-3">Correo</dt>
+        <dd class="col-sm-9">@Model.Correo</dd>
+    </dl>
+
+    <form asp-action="Delete" method="post" class="d-flex gap-2 justify-content-end">
+        <input type="hidden" asp-for="IdCliente" />
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+    </form>
+</section>

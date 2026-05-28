@@ -1,0 +1,34 @@
+@model TableFilterViewModel
+
+<form asp-action="@Model.Action" method="get" class="table-filter js-auto-filter">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-lg">
+            <label class="form-label">Busqueda</label>
+            <input name="search" value="@Model.Search" class="form-control js-filter-input" placeholder="@Model.SearchPlaceholder" autocomplete="off" />
+        </div>
+        @if (Model.ShowEstado)
+        {
+            <div class="col-12 col-md-4 col-lg-2">
+                <label class="form-label">Estado</label>
+                <select name="estado" asp-items="Model.EstadoOptions" class="form-select js-filter-input">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+        }
+        @if (Model.ShowFecha)
+        {
+            <div class="col-12 col-md-4 col-lg-2">
+                <label class="form-label">Fecha</label>
+                <input name="fecha" value="@Model.Fecha" type="date" class="form-control js-filter-input" />
+            </div>
+        }
+        <div class="col-12 col-md-4 col-lg-2">
+            <label class="form-label">Ordenar</label>
+            <select name="sort" asp-items="Model.SortOptions" class="form-select js-filter-input"></select>
+        </div>
+        <div class="col-12 col-md-auto d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Aplicar</button>
+            <a asp-action="@Model.Action" class="btn btn-outline-secondary">Limpiar</a>
+        </div>
+    </div>
+</form>

@@ -1,0 +1,20 @@
+@model IPagedList
+
+@{
+    var routeValues = ViewData["RouteValues"];
+    var ariaLabel = ViewData["AriaLabel"] as string ?? "Paginacion";
+}
+
+@if (Model.PageCount > 1)
+{
+    <nav aria-label="@ariaLabel" class="mt-3">
+        @Html.PagedListPager(Model, page =>
+            Url.Action("Index", routeValues is null ? new { page } : new RouteValueDictionary(routeValues) { ["page"] = page }),
+            new PagedListRenderOptions
+            {
+                LiElementClasses = new[] { "page-item" },
+                PageClasses = new[] { "page-link" },
+                UlElementClasses = new[] { "pagination", "justify-content-end", "mb-0" }
+            })
+    </nav>
+}

@@ -1,0 +1,26 @@
+@model ClienteDto
+
+@{
+    ViewData["Title"] = "Detalle de cliente";
+}
+
+<section class="page-shell form-card">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-1">@Model.Nombre</h1>
+            <p class="text-muted mb-0">Detalle del cliente</p>
+        </div>
+        <a asp-action="Edit" asp-route-id="@Model.IdCliente" class="btn btn-primary">Editar</a>
+    </div>
+
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Telefono</dt>
+        <dd class="col-sm-9">@Model.Telefono</dd>
+        <dt class="col-sm-3">Correo</dt>
+        <dd class="col-sm-9">@Model.Correo</dd>
+    </dl>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+    </div>
+</section>

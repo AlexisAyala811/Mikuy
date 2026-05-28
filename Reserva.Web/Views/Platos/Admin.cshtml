@@ -1,0 +1,42 @@
+@model IReadOnlyList<Reserva.Domain.Entities.Plato>
+@{
+    ViewData["Title"] = "Platos";
+}
+
+<section class="container page-shell admin-page">
+    <div class="page-heading">
+        <div>
+            <h1>Platos</h1>
+            <p>Menu visible para clientes y propuestas de la casa.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-accent">Nuevo plato</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table app-table align-middle">
+            <thead><tr><th>Plato</th><th>Categoria</th><th>Precio</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var plato in Model)
+                {
+                    <tr>
+                        <td>
+                            <strong>@plato.Nombre</strong>
+                            <div class="text-muted small">@plato.Descripcion</div>
+                        </td>
+                        <td>@plato.Categoria</td>
+                        <td>S/ @plato.Precio.ToString("0.00")</td>
+                        <td><span class="status-pill">@(plato.Activo ? "Publicado" : "Oculto")</span></td>
+                        <td class="text-end admin-actions-cell">
+                            <a asp-action="Edit" asp-route-id="@plato.IdPlato" class="btn btn-outline-dark btn-sm">Editar</a>
+                            @if (plato.Activo)
+                            {
+                                <form asp-action="Delete" asp-route-id="@plato.IdPlato" method="post">
+                                    <button class="btn btn-outline-danger btn-sm" type="submit">Ocultar</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

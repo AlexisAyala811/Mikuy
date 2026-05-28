@@ -1,0 +1,125 @@
+@model ReservationLookupViewModel
+
+@{
+    ViewData["Title"] = "Consultar reserva";
+}
+
+<section class="container contact-layout">
+    <div>
+        <p class="eyebrow">Seguimiento</p>
+        <h1>Consultar mi reserva</h1>
+        <p>Ingrese el correo usado al reservar. Si desea mas seguridad, agregue tambien su telefono.</p>
+        <form asp-action="Consultar" method="post" class="row g-3 mt-3">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="col-12">
+                <label asp-for="CodigoReserva" class="form-label"></label>
+                <input asp-for="CodigoReserva" class="form-control" placeholder="Ej. MIK-20260530-0004" />
+                <span asp-validation-for="CodigoReserva" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Correo" class="form-label"></label>
+                <input asp-for="Correo" class="form-control" />
+                <span asp-validation-for="Correo" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Telefono" class="form-label"></label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+            <div class="col-12">
+                <button class="btn btn-accent" type="submit">Consultar estado</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="page-shell">
+        @if (Model.Result is null)
+        {
+            <h2 class="h4">Estado de reserva</h2>
+            <p class="text-muted mb-0">Aqui vera si su reserva esta pendiente, confirmada o cancelada.</p>
+        }
+        else
+        {
+            <p class="eyebrow">Resultado</p>
+            <h2 class="h3"><span class="status-badge status-@Model.Result.Estado.ToLowerInvariant()">@Model.Result.Estado</span></h2>
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Codigo</dt>
+                <dd class="col-sm-8"><span class="reservation-code">@Model.Result.CodigoReserva</span></dd>
+                <dt class="col-sm-4">Cliente</dt>
+                <dd class="col-sm-8">@Model.Result.ClienteNombre</dd>
+                <dt class="col-sm-4">Fecha</dt>
+                <dd class="col-sm-8">@Model.Result.Fecha.ToString("dd/MM/yyyy")</dd>
+                <dt class="col-sm-4">Hora</dt>
+                <dd class="col-sm-8">@Model.Result.Hora.ToString("HH:mm")</dd>
+                <dt class="col-sm-4">Personas</dt>
+                <dd class="col-sm-8">@Model.Result.CantidadPersonas</dd>
+                <dt class="col-sm-4">Mesa</dt>
+                <dd class="col-sm-8">@Model.Result.MesaDescripcion</dd>
+                @if (!string.IsNullOrWhiteSpace(Model.Result.Comentario))
+                {
+                    <dt class="col-sm-4">Comentario</dt>
+                    <dd class="col-sm-8">@Model.Result.Comentario</dd>
+                }
+            </dl>
+
+            <div class="d-flex flex-wrap gap-2 mt-3">
+                @if (Model.Result.Estado is "Confirmada" or "Cancelada")
+                {
+                    <a href="@Model.Result.WhatsAppUrl" target="_blank" rel="noopener" class="btn btn-success">
+                        Contactar por WhatsApp
+                    </a>
+                }
+
+                <a asp-action="Comprobante" asp-route-id="@Model.Result.IdReserva" class="btn btn-outline-dark">
+                    Descargar comprobante PDF
+                </a>
+
+                @if (Model.Result.CanCancel)
+                {
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelReservationModal">
+                        Cancelar mi reserva
+                    </button>
+                    <form asp-action="CancelarConsulta" method="post" class="d-inline" id="cancelReservationForm">
+                        <input type="hidden" asp-for="Correo" />
+                        <input type="hidden" asp-for="Telefono" />
+                        <input type="hidden" asp-for="CodigoReserva" />
+                        <input type="hidden" asp-for="ReservaId" value="@Model.Result.IdReserva" />
+                    </form>
+                }
+            </div>
+
+            @if (Model.Result.CanCancel)
+            {
+                <p class="small text-muted mt-3 mb-0">
+                    Al cancelar, el estado cambiara a Cancelada y Mikuy recibira la actualizacion inmediatamente.
+                </p>
+            }
+        }
+    </div>
+</section>
+
+@if (Model.Result?.CanCancel == true)
+{
+    <div class="modal fade" id="cancelReservationModal" tabindex="-1" aria-labelledby="cancelReservationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title fs-5" id="cancelReservationModalLabel">Cancelar reserva</h2>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Se cancelara la reserva <strong>@Model.Result.CodigoReserva</strong> para el @Model.Result.Fecha.ToString("dd/MM/yyyy") a las @Model.Result.Hora.ToString("HH:mm").</p>
+                    <p class="mb-0 text-muted">El estado cambiara a Cancelada y el equipo de Mikuy vera la actualizacion inmediatamente.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" form="cancelReservationForm" class="btn btn-danger">Confirmar cancelacion</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

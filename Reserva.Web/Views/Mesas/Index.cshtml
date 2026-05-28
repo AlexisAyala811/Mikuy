@@ -1,0 +1,31 @@
+@model IReadOnlyList<Reserva.Domain.Entities.Mesa>
+@{
+    ViewData["Title"] = "Mesas";
+}
+
+<section class="container page-shell admin-page">
+    <div class="page-heading">
+        <div>
+            <h1>Mesas</h1>
+            <p>Capacidad y disponibilidad fisica del restaurante.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-accent">Nueva mesa</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table app-table align-middle">
+            <thead><tr><th>Numero</th><th>Capacidad</th><th>Ubicacion</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var mesa in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">Mesa @mesa.Numero</td>
+                        <td>@mesa.Capacidad personas</td>
+                        <td>@mesa.Ubicacion</td>
+                        <td><span class="status-pill">@(mesa.Activa ? "Activa" : "Inactiva")</span></td>
+                        <td class="text-end"><a asp-action="Edit" asp-route-id="@mesa.IdMesa" class="btn btn-outline-dark btn-sm">Editar</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</section>

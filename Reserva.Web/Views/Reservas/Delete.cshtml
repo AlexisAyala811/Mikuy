@@ -1,0 +1,27 @@
+@model ReservaDto
+
+@{
+    ViewData["Title"] = "Eliminar reserva";
+}
+
+<section class="page-shell form-card">
+    <h1 class="h3 mb-2">Eliminar reserva</h1>
+    <p class="text-muted">Confirma si deseas eliminar esta reserva.</p>
+
+    <dl class="row">
+        <dt class="col-sm-3">Cliente</dt>
+        <dd class="col-sm-9">@Model.ClienteNombre</dd>
+        <dt class="col-sm-3">Fecha</dt>
+        <dd class="col-sm-9">@Model.Fecha.ToString("dd/MM/yyyy")</dd>
+        <dt class="col-sm-3">Hora</dt>
+        <dd class="col-sm-9">@Model.Hora.ToString("HH:mm")</dd>
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9">@Model.Estado</dd>
+    </dl>
+
+    <form asp-action="Delete" method="post" class="d-flex gap-2 justify-content-end">
+        <input type="hidden" asp-for="IdReserva" />
+        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+    </form>
+</section>

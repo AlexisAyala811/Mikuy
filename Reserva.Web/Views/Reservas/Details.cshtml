@@ -1,0 +1,44 @@
+@model ReservaDto
+
+@{
+    ViewData["Title"] = "Detalle de reserva";
+}
+
+<section class="page-shell form-card">
+    <div class="d-flex justify-content-between align-items-start mb-4">
+        <div>
+            <h1 class="h3 mb-1">Reserva @Model.CodigoReserva</h1>
+            <p class="text-muted mb-0">@Model.Hora.ToString("HH:mm") - @Model.ClienteNombre</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="@Model.WhatsAppUrl" target="_blank" rel="noopener" class="btn btn-success">Enviar WhatsApp</a>
+            <a asp-action="Comprobante" asp-route-id="@Model.IdReserva" class="btn btn-outline-dark">PDF</a>
+            <a asp-action="Edit" asp-route-id="@Model.IdReserva" class="btn btn-primary">Editar</a>
+        </div>
+    </div>
+
+    <dl class="row mb-0">
+        <dt class="col-sm-3">Codigo</dt>
+        <dd class="col-sm-9">@Model.CodigoReserva</dd>
+        <dt class="col-sm-3">Cliente</dt>
+        <dd class="col-sm-9">@Model.ClienteNombre</dd>
+        <dt class="col-sm-3">Telefono</dt>
+        <dd class="col-sm-9">@Model.ClienteTelefono</dd>
+        <dt class="col-sm-3">Fecha</dt>
+        <dd class="col-sm-9">@Model.Fecha.ToString("dd/MM/yyyy")</dd>
+        <dt class="col-sm-3">Hora</dt>
+        <dd class="col-sm-9">@Model.Hora.ToString("HH:mm")</dd>
+        <dt class="col-sm-3">Mesa</dt>
+        <dd class="col-sm-9">@Model.MesaDescripcion</dd>
+        <dt class="col-sm-3">Personas</dt>
+        <dd class="col-sm-9">@Model.CantidadPersonas</dd>
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9"><span class="status-badge status-@Model.Estado.ToLowerInvariant()">@Model.Estado</span></dd>
+        <dt class="col-sm-3">Comentario</dt>
+        <dd class="col-sm-9">@(string.IsNullOrWhiteSpace(Model.Comentario) ? "Sin comentario" : Model.Comentario)</dd>
+    </dl>
+
+    <div class="mt-4">
+        <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
+    </div>
+</section>

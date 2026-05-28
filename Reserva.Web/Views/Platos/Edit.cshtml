@@ -1,0 +1,5 @@
+@model Reserva.Domain.Entities.Plato
+@{
+    ViewData["Title"] = "Editar plato";
+}
+<partial name="_PlatoForm" model="Model" view-data='new ViewDataDictionary(ViewData) { ["Action"] = "Edit", ["Heading"] = "Editar plato" }' />

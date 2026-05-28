@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Reserva.Domain/Reserva.Domain.csproj" />
+  <Project Path="Reserva.Infrastructure/Reserva.Infrastructure.csproj" />
+  <Project Path="Reserva.Tests/Reserva.Tests.csproj" />
+  <Project Path="Reserva.Web/Reserva.Web.csproj" />
+</Solution>

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Mikuy</title>
+    <script type="importmap"></script>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/Reserva.Web.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="mikuy-header">
+        <nav class="navbar navbar-expand-lg navbar-dark container">
+            <a class="navbar-brand mikuy-brand" asp-controller="Home" asp-action="Index">Mikuy</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mikuyNav" aria-controls="mikuyNav" aria-expanded="false" aria-label="Abrir navegacion">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="mikuyNav">
+                <div class="navbar-nav me-auto">
+                    <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
+                    <a class="nav-link" asp-controller="Platos" asp-action="Index">Platos</a>
+                    <a class="nav-link" asp-controller="Home" asp-action="Cultura">Cultura</a>
+                    <a class="nav-link" asp-controller="Reservas" asp-action="Reservar">Reservas</a>
+                    <a class="nav-link" asp-controller="Reservas" asp-action="Consultar">Consultar</a>
+                    <a class="nav-link" asp-controller="Home" asp-action="Contacto">Contacto</a>
+                </div>
+                <div class="mikuy-nav-actions">
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <a class="btn btn-outline-light btn-sm" asp-controller="Admin" asp-action="Dashboard">Panel</a>
+                        <form asp-controller="Cuenta" asp-action="Logout" method="post">
+                            <button class="btn btn-sm btn-accent" type="submit">Salir</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a class="btn btn-outline-light btn-sm" asp-controller="Clientes" asp-action="Registro">Registro</a>
+                        <a class="btn btn-sm btn-accent" asp-controller="Cuenta" asp-action="Login">Administrador</a>
+                    }
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <nav class="admin-strip" aria-label="Administracion">
+            <div class="container">
+                <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                <a asp-controller="Reservas" asp-action="Index">Reservas</a>
+                <a asp-controller="Clientes" asp-action="Index">Clientes</a>
+                <a asp-controller="Mesas" asp-action="Index">Mesas</a>
+                <a asp-controller="Platos" asp-action="Admin">Platos</a>
+            </div>
+        </nav>
+    }
+
+    <main role="main" class="content-shell">
+        @RenderBody()
+    </main>
+
+    <footer class="mikuy-footer">
+        <div class="container footer-grid">
+            <div>
+                <strong>Mikuy</strong>
+                <p>Sabores tradicionales de Ayacucho en el corazon de Huamanga.</p>
+            </div>
+            <div>
+                <span>Reservas</span>
+                <p>Lunes a domingo, 12:00 p. m. a 10:00 p. m.</p>
+            </div>
+            <div>
+                <span>Contacto</span>
+                <p>Huamanga, Ayacucho, Peru<br />+51 999 999 999</p>
+            </div>
+        </div>
+    </footer>
+
+    <partial name="_ToastNotifications" />
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

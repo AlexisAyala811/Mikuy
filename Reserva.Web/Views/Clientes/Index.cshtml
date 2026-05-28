@@ -1,0 +1,84 @@
+@model IPagedList<ClienteDto>
+
+@{
+    ViewData["Title"] = "Clientes";
+    var filterModel = new TableFilterViewModel
+    {
+        Search = ViewBag.Search,
+        Sort = ViewBag.Sort,
+        SearchPlaceholder = "Buscar por nombre, telefono o correo",
+        SortOptions = new[]
+        {
+            new SelectListItem("Nombre A-Z", "", ViewBag.Sort is null or ""),
+            new SelectListItem("Nombre Z-A", "nombre_desc", ViewBag.Sort == "nombre_desc"),
+            new SelectListItem("Correo A-Z", "correo", ViewBag.Sort == "correo"),
+            new SelectListItem("Correo Z-A", "correo_desc", ViewBag.Sort == "correo_desc"),
+            new SelectListItem("Telefono A-Z", "telefono", ViewBag.Sort == "telefono"),
+            new SelectListItem("Telefono Z-A", "telefono_desc", ViewBag.Sort == "telefono_desc")
+        }
+    };
+}
+
+<section class="page-shell">
+    <div class="page-heading">
+        <div>
+            <h1>Clientes</h1>
+            <p>Gestiona datos de contacto, busquedas y acciones frecuentes.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">Nuevo cliente</a>
+    </div>
+
+    <partial name="_TableFilters" model="filterModel" />
+
+    <div class="table-responsive mt-3">
+        <table class="table table-hover align-middle app-table">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Telefono</th>
+                    <th>Correo</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+            @if (Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@item.Nombre</td>
+                        <td>@item.Telefono</td>
+                        <td>@item.Correo</td>
+                        <td class="text-end">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a asp-action="Details" asp-route-id="@item.IdCliente" class="btn btn-outline-secondary">Detalle</a>
+                                <a asp-action="Edit" asp-route-id="@item.IdCliente" class="btn btn-outline-primary">Editar</a>
+                                <button type="button"
+                                        class="btn btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#confirmDeleteModal"
+                                        data-delete-url="@Url.Action("Delete", "Clientes", new { id = item.IdCliente })"
+                                        data-delete-text="Cliente: @item.Nombre">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted py-4">No se encontraron clientes.</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+
+    <partial name="_Pagination"
+             model="Model"
+             view-data='new ViewDataDictionary(ViewData) { ["AriaLabel"] = "Paginacion de clientes", ["RouteValues"] = new { search = ViewBag.Search, sort = ViewBag.Sort } }' />
+</section>
+
+<partial name="_ConfirmDeleteModal" />

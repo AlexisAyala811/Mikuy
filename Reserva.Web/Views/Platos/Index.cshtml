@@ -1,0 +1,52 @@
+@model IReadOnlyList<Reserva.Domain.Entities.Plato>
+@{
+    ViewData["Title"] = "Platos";
+    var categorias = Model
+        .GroupBy(plato => plato.Categoria)
+        .OrderBy(grupo => grupo.Key)
+        .ToList();
+}
+
+<section class="page-hero menu-page">
+    <div class="container">
+        <p class="eyebrow">Menu Mikuy</p>
+        <h1>Platos tipicos con sabor ayacuchano</h1>
+        <p>Recetas para compartir antes o despues de su paseo por Huamanga.</p>
+    </div>
+</section>
+
+<section class="container section-space">
+    <nav class="category-tabs" aria-label="Categorias del menu">
+        @foreach (var categoria in categorias)
+        {
+            <a href="#categoria-@categoria.Key.ToLowerInvariant().Replace(" ", "-")">@categoria.Key</a>
+        }
+    </nav>
+
+    @foreach (var categoria in categorias)
+    {
+        <div class="menu-category" id="categoria-@categoria.Key.ToLowerInvariant().Replace(" ", "-")">
+            <div class="section-heading compact">
+                <h2>@categoria.Key</h2>
+                <span>@categoria.Count() opciones</span>
+            </div>
+            <div class="dish-grid menu-grid">
+                @foreach (var plato in categoria)
+                {
+                    <article class="dish-card">
+                        <img src="@plato.ImagenUrl" alt="@plato.Nombre" />
+                        <div>
+                            <span>@plato.Categoria</span>
+                            <h2>@plato.Nombre</h2>
+                            <p>@plato.Descripcion</p>
+                            <footer>
+                                <strong>S/ @plato.Precio.ToString("0.00")</strong>
+                                <a asp-controller="Reservas" asp-action="Reservar">Reservar</a>
+                            </footer>
+                        </div>
+                    </article>
+                }
+            </div>
+        </div>
+    }
+</section>

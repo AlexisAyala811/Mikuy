@@ -1,0 +1,48 @@
+@model ReservationConfirmationViewModel
+
+@{
+    ViewData["Title"] = "Reserva recibida";
+}
+
+<section class="confirmation-hero">
+    <div class="container confirmation-grid">
+        <div class="confirmation-copy">
+            <p class="eyebrow">Reserva recibida</p>
+            <h1>Gracias, @Model.ClienteNombre</h1>
+            <p>Mikuy recibio su solicitud. El equipo administrativo revisara la disponibilidad y le avisara cuando la reserva sea confirmada o cancelada.</p>
+            <div class="confirmation-code">
+                <span>Codigo de reserva</span>
+                <strong>@Model.CodigoReserva</strong>
+            </div>
+        </div>
+
+        <article class="reservation-ticket">
+            <div class="ticket-header">
+                <span>Mikuy</span>
+                <strong class="status-badge status-@Model.Estado.ToLowerInvariant()">@Model.Estado</strong>
+            </div>
+            <dl>
+                <dt>Fecha</dt>
+                <dd>@Model.Fecha.ToString("dd/MM/yyyy")</dd>
+                <dt>Hora</dt>
+                <dd>@Model.Hora.ToString("HH:mm")</dd>
+                <dt>Personas</dt>
+                <dd>@Model.CantidadPersonas</dd>
+                <dt>Mesa</dt>
+                <dd>@Model.MesaDescripcion</dd>
+                <dt>Correo</dt>
+                <dd>@Model.ClienteCorreo</dd>
+                <dt>Telefono</dt>
+                <dd>@Model.ClienteTelefono</dd>
+            </dl>
+            @if (!string.IsNullOrWhiteSpace(Model.Comentario))
+            {
+                <p class="ticket-note">@Model.Comentario</p>
+            }
+            <div class="ticket-actions">
+                <a asp-action="Comprobante" asp-route-id="@Model.IdReserva" class="btn btn-accent">Descargar comprobante PDF</a>
+                <a asp-action="Consultar" class="btn btn-outline-dark">Consultar estado</a>
+            </div>
+        </article>
+    </div>
+</section>

@@ -1,0 +1,5 @@
+@model Reserva.Domain.Entities.Mesa
+@{
+    ViewData["Title"] = "Nueva mesa";
+}
+<partial name="_MesaForm" model="Model" view-data='new ViewDataDictionary(ViewData) { ["Action"] = "Create", ["Heading"] = "Nueva mesa" }' />

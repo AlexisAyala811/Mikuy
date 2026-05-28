@@ -1,0 +1,64 @@
+@model ReservaDto
+
+@{
+    ViewData["Title"] = "Nueva reserva";
+}
+
+<section class="page-shell form-card">
+    <h1 class="h3 mb-4">Nueva reserva</h1>
+
+    <form asp-action="Create" method="post" class="row g-3 reserva-form">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="col-12 col-md-6">
+            <label asp-for="IdCliente" class="form-label"></label>
+            <select asp-for="IdCliente" asp-items="ViewBag.Clientes" class="form-select">
+                <option value="">Seleccione un cliente</option>
+            </select>
+            <span asp-validation-for="IdCliente" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Estado" class="form-label"></label>
+            <select asp-for="Estado" asp-items="ViewBag.Estados" class="form-select"></select>
+            <span asp-validation-for="Estado" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Fecha" class="form-label"></label>
+            <input asp-for="Fecha" class="form-control reserva-fecha" type="date" />
+            <span asp-validation-for="Fecha" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="Hora" class="form-label"></label>
+            <select asp-for="Hora" asp-items="ViewBag.HorariosDisponibles" class="form-select reserva-hora">
+                <option value="">Seleccione un horario</option>
+            </select>
+            <span asp-validation-for="Hora" class="text-danger"></span>
+            <div class="form-text">Solo se muestran horarios disponibles.</div>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="IdMesa" class="form-label"></label>
+            <select asp-for="IdMesa" asp-items="ViewBag.Mesas" class="form-select">
+                <option value="">Seleccione una mesa</option>
+            </select>
+            <span asp-validation-for="IdMesa" class="text-danger"></span>
+        </div>
+        <div class="col-12 col-md-6">
+            <label asp-for="CantidadPersonas" class="form-label"></label>
+            <input asp-for="CantidadPersonas" type="number" min="1" max="24" class="form-control" />
+            <span asp-validation-for="CantidadPersonas" class="text-danger"></span>
+        </div>
+        <div class="col-12">
+            <label asp-for="Comentario" class="form-label"></label>
+            <textarea asp-for="Comentario" class="form-control" rows="3"></textarea>
+            <span asp-validation-for="Comentario" class="text-danger"></span>
+        </div>
+        <div class="col-12 d-flex gap-2 justify-content-end">
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Guardar</button>
+        </div>
+    </form>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/reservas.js" asp-append-version="true"></script>
+}

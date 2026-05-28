@@ -1,0 +1,58 @@
+@using Reserva.Domain.Entities
+@{
+    ViewData["Title"] = "Inicio";
+    var platos = ViewBag.PlatosDestacados as IReadOnlyList<Plato> ?? [];
+}
+
+<section class="hero-mikuy">
+    <div class="container hero-copy">
+        <p class="eyebrow">Cocina ayacuchana</p>
+        <h1>Mikuy</h1>
+        <p>Sabores tradicionales de Ayacucho en el corazon de Huamanga.</p>
+        <div class="hero-actions">
+            <a asp-controller="Reservas" asp-action="Reservar" class="btn btn-accent btn-lg">Reservar ahora</a>
+            <a asp-controller="Platos" asp-action="Index" class="btn btn-outline-light btn-lg">Ver platos</a>
+        </div>
+    </div>
+</section>
+
+<section class="container home-intro">
+    <div>
+        <p class="eyebrow">Tradicion servida con cuidado</p>
+        <h2>Una mesa para comer, celebrar y volver</h2>
+    </div>
+    <p>Mikuy conecta recetas de Ayacucho con una experiencia de reserva clara: revise disponibilidad, elija su horario y deje al equipo preparar la mesa adecuada para su grupo.</p>
+</section>
+
+<section class="container section-space">
+    <div class="section-heading">
+        <h2>Platos destacados</h2>
+        <a asp-controller="Platos" asp-action="Index">Explorar menu</a>
+    </div>
+    <div class="dish-grid">
+        @foreach (var plato in platos)
+        {
+            <article class="dish-card">
+                <img src="@plato.ImagenUrl" alt="@plato.Nombre" />
+                <div>
+                    <span>@plato.Categoria</span>
+                    <h3>@plato.Nombre</h3>
+                    <p>@plato.Descripcion</p>
+                    <strong>S/ @plato.Precio.ToString("0.00")</strong>
+                </div>
+            </article>
+        }
+    </div>
+</section>
+
+<section class="culture-band">
+    <div class="container culture-grid">
+        <div>
+            <p class="eyebrow">Huamanga</p>
+            <h2>La cocina conversa con el retablo, la plaza y la fiesta</h2>
+            <p>En Mikuy la gastronomia no aparece aislada: acompana la memoria de los mercados, las casonas coloniales y las celebraciones ayacuchanas.</p>
+            <a asp-controller="Home" asp-action="Cultura" class="btn btn-outline-light">Conocer la cultura</a>
+        </div>
+        <img src="~/img/cultura/huamanga.png" alt="Cultura ayacuchana en Huamanga" />
+    </div>
+</section>

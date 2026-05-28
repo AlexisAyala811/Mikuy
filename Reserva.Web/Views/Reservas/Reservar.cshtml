@@ -1,0 +1,69 @@
+@model ReservaPublicaViewModel
+@{
+    ViewData["Title"] = "Reservar";
+}
+
+<section class="reservation-public">
+    <div class="container reservation-grid">
+        <div class="reservation-copy">
+            <p class="eyebrow">Reserva publica</p>
+            <h1>Prepare su mesa en Mikuy</h1>
+            <p>Comparta sus datos, el horario y el tamano del grupo. El sistema buscara la mesa activa mas adecuada.</p>
+            <ul>
+                <li>Horarios visibles segun disponibilidad.</li>
+                <li>Confirmacion administrativa desde el panel.</li>
+                <li>Comentarios para celebraciones o preferencias.</li>
+            </ul>
+        </div>
+        <div class="page-shell">
+            <form asp-action="Reservar" method="post" class="row g-3 reserva-form">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <div class="col-12">
+                    <label asp-for="NombreCliente" class="form-label"></label>
+                    <input asp-for="NombreCliente" class="form-control" />
+                    <span asp-validation-for="NombreCliente" class="text-danger"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Telefono" class="form-label"></label>
+                    <input asp-for="Telefono" class="form-control" />
+                    <span asp-validation-for="Telefono" class="text-danger"></span>
+                </div>
+                <div class="col-12 col-md-6">
+                    <label asp-for="Correo" class="form-label"></label>
+                    <input asp-for="Correo" class="form-control" />
+                    <span asp-validation-for="Correo" class="text-danger"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="Fecha" class="form-label"></label>
+                    <input asp-for="Fecha" type="date" class="form-control reserva-fecha" />
+                    <span asp-validation-for="Fecha" class="text-danger"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="Hora" class="form-label"></label>
+                    <select asp-for="Hora" asp-items="ViewBag.HorariosDisponibles" class="form-select reserva-hora">
+                        <option value="">Seleccione</option>
+                    </select>
+                    <span asp-validation-for="Hora" class="text-danger"></span>
+                </div>
+                <div class="col-12 col-md-4">
+                    <label asp-for="CantidadPersonas" class="form-label"></label>
+                    <input asp-for="CantidadPersonas" type="number" min="1" max="24" class="form-control" />
+                    <span asp-validation-for="CantidadPersonas" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <label asp-for="Comentario" class="form-label"></label>
+                    <textarea asp-for="Comentario" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Comentario" class="text-danger"></span>
+                </div>
+                <div class="col-12">
+                    <button class="btn btn-accent w-100" type="submit">Solicitar reserva</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/reservas.js" asp-append-version="true"></script>
+}
