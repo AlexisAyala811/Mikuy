@@ -7,9 +7,16 @@
     <div class="page-heading">
         <div>
             <h1>Mesas</h1>
-            <p>Capacidad y disponibilidad fisica del restaurante.</p>
+            <p>Capacidad y disponibilidad fisica del restaurante. @Model.Count de 20 mesas configuradas.</p>
         </div>
-        <a asp-action="Create" class="btn btn-accent">Nueva mesa</a>
+        @if (Model.Count < 20)
+        {
+            <a asp-action="Create" class="btn btn-accent">Nueva mesa</a>
+        }
+        else
+        {
+            <span class="table-limit-note">Limite actual: 20 mesas</span>
+        }
     </div>
     <div class="table-responsive">
         <table class="table app-table align-middle">

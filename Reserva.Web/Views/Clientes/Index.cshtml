@@ -19,7 +19,7 @@
     };
 }
 
-<section class="page-shell">
+<section class="container page-shell admin-page">
     <div class="page-heading">
         <div>
             <h1>Clientes</h1>
@@ -53,14 +53,7 @@
                             <div class="btn-group btn-group-sm" role="group">
                                 <a asp-action="Details" asp-route-id="@item.IdCliente" class="btn btn-outline-secondary">Detalle</a>
                                 <a asp-action="Edit" asp-route-id="@item.IdCliente" class="btn btn-outline-primary">Editar</a>
-                                <button type="button"
-                                        class="btn btn-outline-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#confirmDeleteModal"
-                                        data-delete-url="@Url.Action("Delete", "Clientes", new { id = item.IdCliente })"
-                                        data-delete-text="Cliente: @item.Nombre">
-                                    Eliminar
-                                </button>
+                                <a asp-action="Delete" asp-route-id="@item.IdCliente" class="btn btn-outline-danger">Eliminar</a>
                             </div>
                         </td>
                     </tr>
@@ -80,5 +73,3 @@
              model="Model"
              view-data='new ViewDataDictionary(ViewData) { ["AriaLabel"] = "Paginacion de clientes", ["RouteValues"] = new { search = ViewBag.Search, sort = ViewBag.Sort } }' />
 </section>
-
-<partial name="_ConfirmDeleteModal" />

@@ -4,7 +4,18 @@
     var platos = ViewBag.PlatosDestacados as IReadOnlyList<Plato> ?? [];
 }
 
-<section class="hero-mikuy">
+<section class="hero-mikuy" data-hero-parallax data-hero-slider data-nav-target="inicio">
+    <div class="hero-slides" aria-hidden="true">
+        <span class="hero-slide is-active" style="--hero-image: url('/img/hero/mikuy-ayacucho.png')"></span>
+        <span class="hero-slide" style="--hero-image: url('/img/cultura/retablo.png')"></span>
+        <span class="hero-slide" style="--hero-image: url('/img/platos/cuy-chactado.png')"></span>
+        <span class="hero-slide" style="--hero-image: url('/img/cultura/fiesta.png')"></span>
+    </div>
+    <div class="hero-ambient" aria-hidden="true">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
     <div class="container hero-copy">
         <p class="eyebrow">Cocina ayacuchana</p>
         <h1>Mikuy</h1>
@@ -13,7 +24,15 @@
             <a asp-controller="Reservas" asp-action="Reservar" class="btn btn-accent btn-lg">Reservar ahora</a>
             <a asp-controller="Platos" asp-action="Index" class="btn btn-outline-light btn-lg">Ver platos</a>
         </div>
+        <div class="hero-proof" aria-label="Datos rapidos">
+            <span>Reservas online</span>
+            <span>Menu regional</span>
+            <span>Atencion diaria</span>
+        </div>
     </div>
+    <a class="hero-scroll-cue" href="#platos-destacados" aria-label="Bajar a platos destacados">
+        <span></span>
+    </a>
 </section>
 
 <section class="container home-intro">
@@ -24,28 +43,74 @@
     <p>Mikuy conecta recetas de Ayacucho con una experiencia de reserva clara: revise disponibilidad, elija su horario y deje al equipo preparar la mesa adecuada para su grupo.</p>
 </section>
 
-<section class="container section-space">
+<section class="container experience-strip" aria-label="Experiencia Mikuy">
+    <article>
+        <span>01</span>
+        <strong>Elija horario</strong>
+        <p>Disponibilidad clara para planear sin llamadas previas.</p>
+    </article>
+    <article>
+        <span>02</span>
+        <strong>Comparta detalles</strong>
+        <p>Personas, comentario y datos de contacto en un solo paso.</p>
+    </article>
+    <article>
+        <span>03</span>
+        <strong>Reciba confirmacion</strong>
+        <p>El equipo valida la mesa y avisa por correo o WhatsApp.</p>
+    </article>
+</section>
+
+<section class="social-proof-band">
+    <div class="container">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Clientes Mikuy</p>
+                <h2>Lo que dicen nuestros clientes</h2>
+            </div>
+        </div>
+        <div class="reviews-grid">
+            <article>
+                <p>"La mejor experiencia gastronomica de Ayacucho. La reserva fue rapida y la atencion muy calida."</p>
+                <strong>Maria P.</strong>
+            </article>
+            <article>
+                <p>"Fuimos en familia y la mesa estuvo lista. El mondongo y la puca picante nos encantaron."</p>
+                <strong>Carlos M.</strong>
+            </article>
+            <article>
+                <p>"Ideal para llevar visitas. Ambiente ayacuchano, platos bien servidos y buena comunicacion por WhatsApp."</p>
+                <strong>Lucia R.</strong>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section id="platos-destacados" class="container section-space featured-dishes-story" data-scroll-story data-nav-target="platos">
     <div class="section-heading">
         <h2>Platos destacados</h2>
         <a asp-controller="Platos" asp-action="Index">Explorar menu</a>
     </div>
     <div class="dish-grid">
-        @foreach (var plato in platos)
+        @for (var i = 0; i < platos.Count; i++)
         {
-            <article class="dish-card">
-                <img src="@plato.ImagenUrl" alt="@plato.Nombre" />
+            var plato = platos[i];
+            var direction = i % 3 == 0 ? "left" : i % 3 == 1 ? "up" : "right";
+
+            <article class="dish-card story-dish story-dish-@direction" style="--story-delay: @(i * 140)ms">
+                <img src="@plato.ImagenUrl" alt="@plato.Nombre" loading="lazy" />
+                <a class="dish-card-action" asp-controller="Platos" asp-action="Index">Ver plato</a>
                 <div>
                     <span>@plato.Categoria</span>
                     <h3>@plato.Nombre</h3>
                     <p>@plato.Descripcion</p>
-                    <strong>S/ @plato.Precio.ToString("0.00")</strong>
                 </div>
             </article>
         }
     </div>
 </section>
 
-<section class="culture-band">
+<section class="culture-band" data-nav-target="cultura">
     <div class="container culture-grid">
         <div>
             <p class="eyebrow">Huamanga</p>
@@ -53,6 +118,6 @@
             <p>En Mikuy la gastronomia no aparece aislada: acompana la memoria de los mercados, las casonas coloniales y las celebraciones ayacuchanas.</p>
             <a asp-controller="Home" asp-action="Cultura" class="btn btn-outline-light">Conocer la cultura</a>
         </div>
-        <img src="~/img/cultura/huamanga.png" alt="Cultura ayacuchana en Huamanga" />
+        <img src="~/img/cultura/huamanga.png" alt="Cultura ayacuchana en Huamanga" loading="lazy" />
     </div>
 </section>

@@ -3,31 +3,45 @@
     ViewData["Title"] = "Registro de cliente";
 }
 
-<section class="container auth-wrap">
-    <div class="page-shell form-card">
-        <p class="eyebrow">Cliente Mikuy</p>
-        <h1 class="h2">Registro</h1>
-        <form asp-action="Registro" method="post" class="row g-3">
+<section class="container auth-wrap client-register-wrap">
+    <div class="client-register-shell">
+        <aside class="client-register-visual" aria-label="Registro de cliente Mikuy">
+            <p class="eyebrow">Cliente Mikuy</p>
+            <h1>Reserva con mas rapidez</h1>
+            <p>Guarda tus datos para que el equipo pueda reconocer tus futuras solicitudes y confirmar tu mesa con menos pasos.</p>
+            <div class="client-register-points">
+                <span>Datos seguros</span>
+                <span>Confirmacion mas agil</span>
+                <span>Atencion personalizada</span>
+            </div>
+        </aside>
+
+        <div class="page-shell form-card client-register-card">
+            <p class="eyebrow">Nuevo cliente</p>
+            <h2>Registro</h2>
+            <p class="form-note">Complete sus datos principales para futuras reservas en Mikuy.</p>
+        <form asp-action="Registro" method="post" class="client-register-form">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="col-12">
+            <div>
                 <label asp-for="Nombre" class="form-label"></label>
                 <input asp-for="Nombre" class="form-control" />
                 <span asp-validation-for="Nombre" class="text-danger"></span>
             </div>
-            <div class="col-12 col-md-6">
+            <div class="client-register-grid">
+            <div>
                 <label asp-for="Telefono" class="form-label"></label>
                 <input asp-for="Telefono" class="form-control" />
                 <span asp-validation-for="Telefono" class="text-danger"></span>
             </div>
-            <div class="col-12 col-md-6">
+            <div>
                 <label asp-for="Correo" class="form-label"></label>
                 <input asp-for="Correo" class="form-control" />
                 <span asp-validation-for="Correo" class="text-danger"></span>
             </div>
-            <div class="col-12">
-                <button class="btn btn-accent w-100" type="submit">Registrarme</button>
             </div>
+            <button class="btn btn-accent w-100" type="submit">Registrarme</button>
         </form>
+        </div>
     </div>
 </section>
 

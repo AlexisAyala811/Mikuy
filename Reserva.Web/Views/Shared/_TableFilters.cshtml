@@ -1,10 +1,17 @@
 @model TableFilterViewModel
 
 <form asp-action="@Model.Action" method="get" class="table-filter js-auto-filter">
+    <div class="filter-heading">
+        <div>
+            <strong>Buscar y filtrar</strong>
+            <span>Encuentra una reserva por cliente, estado o fecha.</span>
+        </div>
+        <a asp-action="@Model.Action" class="filter-reset-link">Restablecer</a>
+    </div>
     <div class="row g-2 align-items-end">
         <div class="col-12 col-lg">
             <label class="form-label">Busqueda</label>
-            <input name="search" value="@Model.Search" class="form-control js-filter-input" placeholder="@Model.SearchPlaceholder" autocomplete="off" />
+            <input name="search" value="@Model.Search" class="form-control js-filter-input" placeholder="@Model.SearchPlaceholder" autocomplete="off" aria-label="@Model.SearchPlaceholder" />
         </div>
         @if (Model.ShowEstado)
         {
@@ -26,9 +33,8 @@
             <label class="form-label">Ordenar</label>
             <select name="sort" asp-items="Model.SortOptions" class="form-select js-filter-input"></select>
         </div>
-        <div class="col-12 col-md-auto d-flex gap-2">
+        <div class="col-12 col-md-auto d-flex gap-2 filter-submit-actions">
             <button type="submit" class="btn btn-primary">Aplicar</button>
-            <a asp-action="@Model.Action" class="btn btn-outline-secondary">Limpiar</a>
         </div>
     </div>
 </form>

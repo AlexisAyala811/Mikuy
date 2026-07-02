@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Reserva.Domain.Entities;
 using Reserva.Infrastructure.Persistence;
@@ -18,7 +19,7 @@ namespace Reserva.Web.Controllers;
 public sealed class ReservasController : Controller
 {
     private const int PageSize = 8;
-    private static readonly TimeOnly FirstSlot = new(9, 0);
+    private static readonly TimeOnly FirstSlot = new(12, 0);
     private static readonly TimeOnly LastSlot = new(21, 0);
     private readonly ReservationDbContext _context;
     private readonly IMapper _mapper;
@@ -75,10 +76,19 @@ public sealed class ReservasController : Controller
             "hora" => query.OrderBy(reserva => reserva.Hora),
             "cliente" => query.OrderBy(reserva => reserva.Cliente!.Nombre),
             "estado" => query.OrderBy(reserva => reserva.Estado),
-            _ => query.OrderByDescending(reserva => reserva.Fecha).ThenBy(reserva => reserva.Hora)
+            _ => query
+                .OrderBy(reserva => reserva.Estado == EstadosReserva.Pendiente ? 0 : reserva.Estado == EstadosReserva.Confirmada ? 1 : 2)
+                .ThenBy(reserva => reserva.Fecha < DateOnly.FromDateTime(DateTime.Today) ? 1 : 0)
+                .ThenBy(reserva => reserva.Fecha)
+                .ThenBy(reserva => reserva.Hora)
         };
 
-        var reservas = await query.ToListAsync(cancellationToken);
+        var pageNumber = Math.Max(page ?? 1, 1);
+        var totalReservas = await query.CountAsync(cancellationToken);
+        var reservas = await query
+            .Skip((pageNumber - 1) * PageSize)
+            .Take(PageSize)
+            .ToListAsync(cancellationToken);
 
         ViewBag.Search = search;
         ViewBag.Estado = estado;
@@ -87,13 +97,7 @@ public sealed class ReservasController : Controller
 
         var reservaDtos = _mapper.Map<List<ReservaDto>>(reservas);
 
-        foreach (var dto in reservaDtos)
-        {
-            var reserva = reservas.First(item => item.IdReserva == dto.IdReserva);
-            dto.WhatsAppUrl = _notificationService.BuildWhatsAppUrl(reserva);
-        }
-
-        return View(reservaDtos.ToPagedList(page ?? 1, PageSize));
+        return View(new StaticPagedList<ReservaDto>(reservaDtos, pageNumber, PageSize, totalReservas));
     }
 
     public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
@@ -109,10 +113,7 @@ public sealed class ReservasController : Controller
             return NotFound();
         }
 
-        var dto = _mapper.Map<ReservaDto>(reserva);
-        dto.WhatsAppUrl = _notificationService.BuildWhatsAppUrl(reserva);
-
-        return View(dto);
+        return View(_mapper.Map<ReservaDto>(reserva));
     }
 
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
@@ -204,12 +205,6 @@ public sealed class ReservasController : Controller
             await _notificationService.NotifyStatusChangedAsync(reserva, previousStatus, cancellationToken);
             TempData["Success"] = "Reserva actualizada correctamente.";
 
-            if (previousStatus != reserva.Estado && reserva.Estado is EstadosReserva.Confirmada or EstadosReserva.Cancelada)
-            {
-                TempData["WhatsAppUrl"] = _notificationService.BuildWhatsAppUrl(reserva);
-                TempData["WhatsAppText"] = "Enviar WhatsApp al cliente";
-            }
-
             return RedirectToAction(nameof(Index));
         }
         catch (DbUpdateException)
@@ -256,15 +251,77 @@ public sealed class ReservasController : Controller
 
     [HttpGet]
     [AllowAnonymous]
-    public async Task<IActionResult> HorariosDisponibles(DateOnly fecha, int? idReserva, CancellationToken cancellationToken)
+    [EnableRateLimiting("public-reservations")]
+    public async Task<IActionResult> HorariosDisponibles(DateOnly fecha, int? idReserva, int? cantidadPersonas, CancellationToken cancellationToken)
     {
-        var horarios = await GetAvailableTimesAsync(fecha, idReserva, cancellationToken);
+        var horarios = await GetAvailableTimesAsync(fecha, idReserva, cantidadPersonas, cancellationToken);
 
         return Json(horarios.Select(hora => new
         {
             value = hora.ToString("HH:mm"),
             text = hora.ToString("HH:mm")
         }));
+    }
+
+    [HttpGet]
+    [AllowAnonymous]
+    [EnableRateLimiting("public-reservations")]
+    public async Task<IActionResult> Disponibilidad(
+        DateOnly fecha,
+        TimeOnly hora,
+        int cantidadPersonas,
+        int? idReserva,
+        CancellationToken cancellationToken)
+    {
+        if (fecha == default || hora == default || cantidadPersonas <= 0)
+        {
+            return Json(new
+            {
+                available = false,
+                status = "pending",
+                message = "Seleccione fecha, hora y cantidad de personas para consultar disponibilidad."
+            });
+        }
+
+        if (fecha < DateOnly.FromDateTime(DateTime.Today))
+        {
+            return Json(new
+            {
+                available = false,
+                status = "unavailable",
+                message = "Seleccione una fecha vigente."
+            });
+        }
+
+        if (!IsWithinReservationHours(hora))
+        {
+            return Json(new
+            {
+                available = false,
+                status = "unavailable",
+                message = "Las reservas se atienden entre las 12:00 p. m. y las 10:00 p. m."
+            });
+        }
+
+        var mesa = await FindAvailableMesaAsync(fecha, hora, cantidadPersonas, idReserva, cancellationToken);
+
+        if (mesa is null)
+        {
+            return Json(new
+            {
+                available = false,
+                status = "unavailable",
+                message = "No hay disponibilidad para ese horario. Pruebe otro horario."
+            });
+        }
+
+        return Json(new
+        {
+            available = true,
+            status = "available",
+            message = $"Mesa disponible para {cantidadPersonas} personas.",
+            table = $"Mesa {mesa.Numero} - {mesa.Ubicacion}"
+        });
     }
 
     private async Task LoadFormDataAsync(DateOnly fecha, int? idReserva, CancellationToken cancellationToken)
@@ -274,7 +331,7 @@ public sealed class ReservasController : Controller
             .OrderBy(cliente => cliente.Nombre)
             .ToListAsync(cancellationToken);
 
-        var horarios = await GetAvailableTimesAsync(fecha, idReserva, cancellationToken);
+        var horarios = await GetAvailableTimesAsync(fecha, idReserva, null, cancellationToken);
         var mesas = await _context.Mesas
             .AsNoTracking()
             .Where(mesa => mesa.Activa)
@@ -316,6 +373,12 @@ public sealed class ReservasController : Controller
             return;
         }
 
+        if (!IsWithinReservationHours(dto.Hora))
+        {
+            ModelState.AddModelError(nameof(dto.Hora), "Seleccione un horario dentro de la atencion del restaurante.");
+            return;
+        }
+
         var mesa = await _context.Mesas.FirstOrDefaultAsync(item => item.IdMesa == dto.IdMesa && item.Activa, cancellationToken);
 
         if (mesa is null)
@@ -333,6 +396,7 @@ public sealed class ReservasController : Controller
             reserva.Fecha == dto.Fecha &&
             reserva.Hora == dto.Hora &&
             reserva.IdMesa == dto.IdMesa &&
+            reserva.Estado != EstadosReserva.Cancelada &&
             (!idReserva.HasValue || reserva.IdReserva != idReserva.Value),
             cancellationToken);
 
@@ -345,22 +409,33 @@ public sealed class ReservasController : Controller
     private async Task<IReadOnlyList<TimeOnly>> GetAvailableTimesAsync(
         DateOnly fecha,
         int? idReserva,
+        int? cantidadPersonas,
         CancellationToken cancellationToken)
     {
         var horariosOcupados = await _context.Reservas
             .AsNoTracking()
             .Where(reserva =>
                 reserva.Fecha == fecha &&
+                reserva.Estado != EstadosReserva.Cancelada &&
                 (!idReserva.HasValue || reserva.IdReserva != idReserva.Value))
-            .Select(reserva => reserva.Hora)
+            .Select(reserva => new { reserva.Hora, reserva.IdMesa })
             .ToListAsync(cancellationToken);
 
-        var mesasActivas = await _context.Mesas.CountAsync(mesa => mesa.Activa, cancellationToken);
+        var mesasActivas = await _context.Mesas
+            .AsNoTracking()
+            .Where(mesa => mesa.Activa && (!cantidadPersonas.HasValue || mesa.Capacidad >= cantidadPersonas.Value))
+            .Select(mesa => mesa.IdMesa)
+            .ToListAsync(cancellationToken);
         var disponibles = new List<TimeOnly>();
 
         for (var hora = FirstSlot; hora <= LastSlot; hora = hora.AddHours(1))
         {
-            if (mesasActivas > horariosOcupados.Count(horario => horario == hora))
+            var mesasOcupadas = horariosOcupados
+                .Where(reserva => reserva.Hora == hora)
+                .Select(reserva => reserva.IdMesa)
+                .ToHashSet();
+
+            if (mesasActivas.Any(idMesa => !mesasOcupadas.Contains(idMesa)))
             {
                 disponibles.Add(hora);
             }
@@ -379,6 +454,7 @@ public sealed class ReservasController : Controller
 
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting("public-reservations")]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Reservar(ReservaPublicaViewModel model, CancellationToken cancellationToken)
     {
@@ -387,7 +463,17 @@ public sealed class ReservasController : Controller
             ModelState.AddModelError(nameof(model.Fecha), "Seleccione una fecha vigente.");
         }
 
-        var mesa = await FindAvailableMesaAsync(model.Fecha, model.Hora, model.CantidadPersonas, cancellationToken);
+        if (model.Fecha > DateOnly.FromDateTime(DateTime.Today.AddDays(90)))
+        {
+            ModelState.AddModelError(nameof(model.Fecha), "Las reservas se habilitan con un maximo de 90 dias de anticipacion.");
+        }
+
+        if (!IsWithinReservationHours(model.Hora))
+        {
+            ModelState.AddModelError(nameof(model.Hora), "Seleccione un horario entre las 12:00 p. m. y las 10:00 p. m.");
+        }
+
+        var mesa = await FindAvailableMesaAsync(model.Fecha, model.Hora, model.CantidadPersonas, null, cancellationToken);
 
         if (model.Hora == default || mesa is null)
         {
@@ -400,22 +486,24 @@ public sealed class ReservasController : Controller
             return View(model);
         }
 
-        var cliente = await _context.Clientes.FirstOrDefaultAsync(item => item.Correo == model.Correo, cancellationToken);
+        var correo = model.Correo.Trim().ToLowerInvariant();
+        var telefono = NormalizeDigits(model.Telefono);
+        var cliente = await _context.Clientes.FirstOrDefaultAsync(item => item.Correo == correo, cancellationToken);
 
         if (cliente is null)
         {
             cliente = new Cliente
             {
                 Nombre = model.NombreCliente.Trim(),
-                Telefono = model.Telefono.Trim(),
-                Correo = model.Correo.Trim()
+                Telefono = telefono,
+                Correo = correo
             };
             _context.Clientes.Add(cliente);
         }
         else
         {
             cliente.Nombre = model.NombreCliente.Trim();
-            cliente.Telefono = model.Telefono.Trim();
+            cliente.Telefono = telefono;
         }
 
         var reserva = new ReservaEntity
@@ -457,6 +545,7 @@ public sealed class ReservasController : Controller
             ClienteNombre = reserva.Cliente?.Nombre ?? string.Empty,
             ClienteCorreo = reserva.Cliente?.Correo ?? string.Empty,
             ClienteTelefono = reserva.Cliente?.Telefono ?? string.Empty,
+            WhatsAppUrl = _notificationService.BuildWhatsAppUrl(reserva),
             Fecha = reserva.Fecha,
             Hora = reserva.Hora,
             Estado = reserva.Estado,
@@ -467,7 +556,7 @@ public sealed class ReservasController : Controller
     }
 
     [AllowAnonymous]
-    public async Task<IActionResult> Comprobante(int id, CancellationToken cancellationToken)
+    public async Task<IActionResult> Comprobante(int id, string? code, CancellationToken cancellationToken)
     {
         var reserva = await _context.Reservas
             .AsNoTracking()
@@ -480,12 +569,20 @@ public sealed class ReservasController : Controller
             return NotFound();
         }
 
+        // A public receipt requires the reservation code; authenticated staff retain access by id.
+        if (User.Identity?.IsAuthenticated != true &&
+            !string.Equals(reserva.CodigoReserva, code?.Trim(), StringComparison.OrdinalIgnoreCase))
+        {
+            return NotFound();
+        }
+
         var pdf = _receiptService.BuildReceiptPdf(reserva);
         var fileName = $"comprobante-{reserva.CodigoReserva}.pdf";
         return File(pdf, "application/pdf", fileName);
     }
 
     [AllowAnonymous]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     public IActionResult Consultar()
     {
         return View(new ReservationLookupViewModel());
@@ -493,51 +590,82 @@ public sealed class ReservasController : Controller
 
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting("public-reservations")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Consultar(ReservationLookupViewModel model, CancellationToken cancellationToken)
     {
+        model.MetodoConsulta = string.Equals(model.MetodoConsulta, "contacto", StringComparison.OrdinalIgnoreCase)
+            ? "contacto"
+            : "codigo";
+
+        if (model.MetodoConsulta == "codigo" && string.IsNullOrWhiteSpace(model.CodigoReserva))
+        {
+            ModelState.AddModelError(nameof(model.CodigoReserva), "Ingrese el codigo de reserva.");
+        }
+
+        if (model.MetodoConsulta == "contacto" && string.IsNullOrWhiteSpace(model.Contacto))
+        {
+            ModelState.AddModelError(nameof(model.Contacto), "Ingrese el correo o telefono usado en la reserva.");
+        }
+
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        var correo = model.Correo.Trim();
-        var telefono = NormalizeDigits(model.Telefono);
-        var codigo = model.CodigoReserva?.Trim();
-
         var query = _context.Reservas
             .AsNoTracking()
             .Include(reserva => reserva.Cliente)
             .Include(reserva => reserva.Mesa)
-            .Where(reserva => reserva.Cliente != null && reserva.Cliente.Correo == correo);
+            .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(telefono))
+        if (model.MetodoConsulta == "codigo")
         {
-            query = query.Where(reserva => reserva.Cliente != null && reserva.Cliente.Telefono.Contains(telefono));
-        }
-
-        if (!string.IsNullOrWhiteSpace(codigo))
-        {
+            var codigo = model.CodigoReserva!.Trim();
             query = query.Where(reserva => reserva.CodigoReserva == codigo);
         }
+        else
+        {
+            var contacto = model.Contacto!.Trim();
 
-        var reserva = await query
+            if (contacto.Contains('@', StringComparison.Ordinal))
+            {
+                query = query.Where(reserva => reserva.Cliente != null && reserva.Cliente.Correo == contacto);
+            }
+            else
+            {
+                var digits = NormalizeDigits(contacto);
+                query = query.Where(reserva => reserva.Cliente != null && reserva.Cliente.Telefono.Contains(digits));
+            }
+        }
+
+        var reservas = await query
             .OrderByDescending(item => item.Fecha)
             .ThenByDescending(item => item.Hora)
-            .FirstOrDefaultAsync(cancellationToken);
+            .Take(10)
+            .ToListAsync(cancellationToken);
 
-        if (reserva is null)
+        if (reservas.Count == 0)
         {
-            ModelState.AddModelError(string.Empty, "No encontramos una reserva con esos datos.");
+            ModelState.AddModelError(string.Empty, model.MetodoConsulta == "codigo"
+                ? "No encontramos una reserva con ese codigo."
+                : "No encontramos reservas asociadas a ese correo o telefono.");
             return View(model);
         }
 
-        model.Result = _notificationService.BuildLookupResult(reserva);
+        model.Results = reservas
+            .Select(_notificationService.BuildLookupResult)
+            .ToList();
+        model.Result = model.Results.Count == 1 ? model.Results[0] : null;
+
         return View(model);
     }
 
     [HttpPost]
     [AllowAnonymous]
+    [EnableRateLimiting("public-reservations")]
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CancelarConsulta(ReservationLookupViewModel model, CancellationToken cancellationToken)
     {
@@ -549,12 +677,11 @@ public sealed class ReservasController : Controller
 
         if (string.IsNullOrWhiteSpace(model.Correo))
         {
-            ModelState.AddModelError(nameof(model.Correo), "Ingrese el correo usado en la reserva.");
+            ModelState.AddModelError(string.Empty, "No pudimos validar el correo usado en la reserva.");
             return View(nameof(Consultar), model);
         }
 
         var correo = model.Correo.Trim();
-        var telefono = NormalizeDigits(model.Telefono);
         var codigo = model.CodigoReserva?.Trim();
 
         var reserva = await _context.Reservas
@@ -562,13 +689,12 @@ public sealed class ReservasController : Controller
             .Include(item => item.Mesa)
             .FirstOrDefaultAsync(item =>
                 item.IdReserva == model.ReservaId.Value &&
+                item.CodigoReserva == codigo &&
                 item.Cliente != null &&
                 item.Cliente.Correo == correo,
                 cancellationToken);
 
-        if (reserva is null ||
-            (!string.IsNullOrWhiteSpace(codigo) && reserva.CodigoReserva != codigo) ||
-            (!string.IsNullOrWhiteSpace(telefono) && !NormalizeDigits(reserva.Cliente?.Telefono).Contains(telefono)))
+        if (reserva is null)
         {
             ModelState.AddModelError(string.Empty, "No pudimos validar la reserva con esos datos.");
             return View(nameof(Consultar), model);
@@ -577,14 +703,14 @@ public sealed class ReservasController : Controller
         if (reserva.Estado == EstadosReserva.Cancelada)
         {
             TempData["Success"] = "La reserva ya estaba cancelada.";
-            model.Result = _notificationService.BuildLookupResult(reserva);
+            SetLookupResult(model, reserva);
             return View(nameof(Consultar), model);
         }
 
         if (reserva.Fecha < DateOnly.FromDateTime(DateTime.Today))
         {
             ModelState.AddModelError(string.Empty, "No se puede cancelar una reserva de una fecha pasada desde esta pantalla.");
-            model.Result = _notificationService.BuildLookupResult(reserva);
+            SetLookupResult(model, reserva);
             return View(nameof(Consultar), model);
         }
 
@@ -594,14 +720,28 @@ public sealed class ReservasController : Controller
         await _notificationService.NotifyStatusChangedAsync(reserva, previousStatus, cancellationToken);
 
         TempData["Success"] = "Su reserva fue cancelada correctamente. Tambien le enviaremos el aviso por correo si el correo esta configurado.";
-        model.Result = _notificationService.BuildLookupResult(reserva);
+        SetLookupResult(model, reserva);
         return View(nameof(Consultar), model);
+    }
+
+    private void SetLookupResult(ReservationLookupViewModel model, ReservaEntity reserva)
+    {
+        var result = _notificationService.BuildLookupResult(reserva);
+        model.Result = result;
+        model.Results = [result];
+    }
+
+    private static string NormalizeDigits(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : new string(value.Where(char.IsDigit).ToArray());
     }
 
     private async Task LoadPublicTimesAsync(DateOnly fecha, CancellationToken cancellationToken)
     {
         ViewBag.HorariosDisponibles = new SelectList(
-            (await GetAvailableTimesAsync(fecha, null, cancellationToken))
+            (await GetAvailableTimesAsync(fecha, null, null, cancellationToken))
                 .Select(hora => new { Value = hora.ToString("HH:mm"), Text = hora.ToString("HH:mm") }),
             "Value",
             "Text");
@@ -611,10 +751,20 @@ public sealed class ReservasController : Controller
         DateOnly fecha,
         TimeOnly hora,
         int cantidadPersonas,
+        int? idReserva,
         CancellationToken cancellationToken)
     {
+        if (fecha == default || cantidadPersonas <= 0 || !IsWithinReservationHours(hora))
+        {
+            return null;
+        }
+
         var mesasOcupadas = _context.Reservas
-            .Where(reserva => reserva.Fecha == fecha && reserva.Hora == hora)
+            .Where(reserva =>
+                reserva.Fecha == fecha &&
+                reserva.Hora == hora &&
+                reserva.Estado != EstadosReserva.Cancelada &&
+                (!idReserva.HasValue || reserva.IdReserva != idReserva.Value))
             .Select(reserva => reserva.IdMesa);
 
         return await _context.Mesas
@@ -628,12 +778,7 @@ public sealed class ReservasController : Controller
             .FirstOrDefaultAsync(cancellationToken);
     }
 
-    private static string NormalizeDigits(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value)
-            ? string.Empty
-            : new string(value.Where(char.IsDigit).ToArray());
-    }
+    private static bool IsWithinReservationHours(TimeOnly hora) => hora >= FirstSlot && hora <= LastSlot;
 
     private async Task EnsureReservationCodeAsync(int idReserva, CancellationToken cancellationToken)
     {

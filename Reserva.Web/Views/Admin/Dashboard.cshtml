@@ -1,13 +1,226 @@
 @using Reserva.Domain.Entities
+@using Reserva.Web.Models
 @{
     ViewData["Title"] = "Dashboard";
     var ultimasReservas = ViewBag.UltimasReservas as IReadOnlyList<Reserva> ?? [];
     var reservasPendientes = ViewBag.ReservasPendientes as IReadOnlyList<Reserva> ?? [];
+    var agendaHoy = ViewBag.AgendaHoy as IReadOnlyList<Reserva> ?? [];
     var calendarioReservas = ViewBag.CalendarioReservas as IReadOnlyList<Reserva> ?? [];
+    var resultadosBusqueda = ViewBag.ResultadosBusqueda as IReadOnlyList<Reserva> ?? [];
+    var estadoOperativo = ViewBag.EstadoOperativo as OperationalStatusViewModel ?? new OperationalStatusViewModel();
+    var busquedaGlobal = ViewBag.BusquedaGlobal as string ?? string.Empty;
     var diasCalendario = Enumerable.Range(0, 7).Select(offset => DateOnly.FromDateTime(DateTime.Today).AddDays(offset)).ToList();
 }
 
 <section class="container admin-dashboard">
+    <section class="global-search-panel" aria-label="Busqueda global">
+        <form asp-controller="Admin" asp-action="Dashboard" method="get" class="global-search-form">
+            <label class="visually-hidden" for="globalDashboardSearch">Buscar cliente, reserva o codigo</label>
+            <span aria-hidden="true">&#128269;</span>
+            <input id="globalDashboardSearch"
+                   name="busquedaGlobal"
+                   value="@busquedaGlobal"
+                   class="form-control"
+                   placeholder="Buscar cliente, reserva o codigo"
+                   autocomplete="off" />
+            <button class="btn btn-accent" type="submit">Buscar</button>
+            @if (!string.IsNullOrWhiteSpace(busquedaGlobal))
+            {
+                <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-dark">Limpiar</a>
+            }
+        </form>
+
+        @if (!string.IsNullOrWhiteSpace(busquedaGlobal))
+        {
+            <div class="global-search-results">
+                <div class="global-search-summary">
+                    <strong>Resultados para "@busquedaGlobal"</strong>
+                    <span>@resultadosBusqueda.Count coincidencia(s)</span>
+                </div>
+
+                @if (resultadosBusqueda.Count == 0)
+                {
+                    <p class="global-search-empty">No se encontraron reservas con ese cliente, contacto o codigo.</p>
+                }
+                else
+                {
+                    <div class="global-result-list">
+                        @foreach (var reserva in resultadosBusqueda)
+                        {
+                            <a asp-controller="Reservas" asp-action="Details" asp-route-id="@reserva.IdReserva" class="global-result-item">
+                                <div>
+                                    <span>Cliente</span>
+                                    <strong>@reserva.Cliente?.Nombre</strong>
+                                </div>
+                                <div>
+                                    <span>Reserva</span>
+                                    <strong>@reserva.Fecha.ToString("dd/MM/yyyy") @reserva.Hora.ToString("HH:mm")</strong>
+                                </div>
+                                <div>
+                                    <span>Codigo</span>
+                                    <strong>@reserva.CodigoReserva</strong>
+                                </div>
+                                <span class="status-badge status-@reserva.Estado.ToLowerInvariant()">@reserva.Estado</span>
+                            </a>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="operational-status-panel status-@estadoOperativo.State" aria-label="Estado operativo">
+        <div class="operational-status-main">
+            <span class="operational-status-dot" aria-hidden="true"></span>
+            <div>
+                <p class="eyebrow">Estado operativo</p>
+                <h2>@estadoOperativo.Title</h2>
+                <p>@estadoOperativo.Summary</p>
+            </div>
+        </div>
+        <div class="operational-signal-grid">
+            <a asp-controller="Reservas" asp-action="Index" asp-route-estado="@EstadosReserva.Pendiente" class="operational-signal @(estadoOperativo.PendingReservations > 0 ? "signal-yellow" : "signal-green")">
+                <span class="signal-dot" aria-hidden="true"></span>
+                <strong>@estadoOperativo.PendingReservations reserva(s) pendiente(s)</strong>
+                <small>@(estadoOperativo.PendingReservations > 0 ? "Requieren confirmacion" : "Sin pendientes")</small>
+            </a>
+            <a asp-controller="Mesas" asp-action="Index" class="operational-signal @(estadoOperativo.TablesRequiringAttention > 0 ? "signal-yellow" : "signal-green")">
+                <span class="signal-dot" aria-hidden="true"></span>
+                <strong>@estadoOperativo.TablesRequiringAttention mesa(s) requieren atencion</strong>
+                <small>@(estadoOperativo.TablesRequiringAttention > 0 ? "Revise mesas inactivas" : "Mesas activas normales")</small>
+            </a>
+            <a asp-controller="Reservas" asp-action="Index" class="operational-signal @(estadoOperativo.HasCriticalCapacity ? "signal-red" : "signal-green")">
+                <span class="signal-dot" aria-hidden="true"></span>
+                <strong>@estadoOperativo.CurrentOccupancyPercent% ocupacion actual</strong>
+                <small>@(estadoOperativo.HasCriticalCapacity ? "Capacidad critica" : "Capacidad controlada")</small>
+            </a>
+            <a asp-controller="Reservas" asp-action="Index" class="operational-signal @(estadoOperativo.InsufficientTableReservations > 0 || estadoOperativo.ScheduleConflicts > 0 ? "signal-red" : "signal-green")">
+                <span class="signal-dot" aria-hidden="true"></span>
+                <strong>@(estadoOperativo.InsufficientTableReservations + estadoOperativo.ScheduleConflicts) conflicto(s)</strong>
+                <small>Mesas insuficientes u horarios duplicados</small>
+            </a>
+        </div>
+    </section>
+
+    <section class="pending-priority-panel @(reservasPendientes.Count == 0 ? "is-empty" : "")" aria-label="Reservas pendientes">
+        <div class="pending-priority-header">
+            <div>
+                <p class="eyebrow">Prioridad maxima</p>
+                <h1>Reservas pendientes (@reservasPendientes.Count)</h1>
+                <p>Confirme o cancele solicitudes nuevas desde el dashboard, sin abrir pantallas extra.</p>
+            </div>
+            <a asp-controller="Reservas" asp-action="Index" asp-route-estado="@EstadosReserva.Pendiente" class="btn btn-outline-dark">Ver agenda completa</a>
+        </div>
+
+        @if (reservasPendientes.Count == 0)
+        {
+            <div class="pending-priority-empty">
+                <strong>No hay reservas pendientes.</strong>
+                <span>La bandeja operativa esta al dia.</span>
+            </div>
+        }
+        else
+        {
+            <div class="pending-priority-list">
+                @foreach (var reserva in reservasPendientes)
+                {
+                    <article class="pending-reservation-card">
+                        <div>
+                            <span class="pending-code">@reserva.CodigoReserva</span>
+                            <h2>@reserva.Cliente?.Nombre</h2>
+                        </div>
+                        <dl class="pending-reservation-meta">
+                            <div>
+                                <dt>Fecha</dt>
+                                <dd>@reserva.Fecha.ToString("dd/MM/yyyy")</dd>
+                            </div>
+                            <div>
+                                <dt>Hora</dt>
+                                <dd>@reserva.Hora.ToString("HH:mm")</dd>
+                            </div>
+                            <div>
+                                <dt>Personas</dt>
+                                <dd>@reserva.CantidadPersonas</dd>
+                            </div>
+                            <div>
+                                <dt>Mesa sugerida</dt>
+                                <dd>Mesa @reserva.Mesa?.Numero</dd>
+                            </div>
+                        </dl>
+                        @if (!string.IsNullOrWhiteSpace(reserva.Comentario))
+                        {
+                            <p class="pending-comment">@reserva.Comentario</p>
+                        }
+                        <div class="pending-card-actions">
+                            <button class="btn btn-accent btn-sm"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reservationStatusModal"
+                                    data-reservation-action="confirmar"
+                                    data-reservation-state="@EstadosReserva.Confirmada"
+                                    data-reservation-id="@reserva.IdReserva"
+                                    data-reservation-client="@reserva.Cliente?.Nombre"
+                                    data-reservation-date="@reserva.Fecha.ToString("dd/MM/yyyy")"
+                                    data-reservation-time="@reserva.Hora.ToString("HH:mm")"
+                                    data-reservation-table="Mesa @reserva.Mesa?.Numero">
+                                &#10003; Confirmar
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    type="button"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#reservationStatusModal"
+                                    data-reservation-action="cancelar"
+                                    data-reservation-state="@EstadosReserva.Cancelada"
+                                    data-reservation-id="@reserva.IdReserva"
+                                    data-reservation-client="@reserva.Cliente?.Nombre"
+                                    data-reservation-date="@reserva.Fecha.ToString("dd/MM/yyyy")"
+                                    data-reservation-time="@reserva.Hora.ToString("HH:mm")"
+                                    data-reservation-table="Mesa @reserva.Mesa?.Numero">
+                                &#10005; Cancelar
+                            </button>
+                            <a asp-controller="Reservas" asp-action="Details" asp-route-id="@reserva.IdReserva" class="btn btn-outline-dark btn-sm">Ver detalle</a>
+                        </div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="today-agenda-panel" aria-label="Agenda de hoy">
+        <div class="today-agenda-header">
+            <div>
+                <p class="eyebrow">Operacion diaria</p>
+                <h2>Agenda de hoy</h2>
+                <p>@DateOnly.FromDateTime(DateTime.Today).ToString("dd/MM/yyyy") - @agendaHoy.Count reserva(s)</p>
+            </div>
+            <a asp-controller="Reservas" asp-action="Index" asp-route-fecha="@DateOnly.FromDateTime(DateTime.Today).ToString("yyyy-MM-dd")" class="btn btn-outline-dark btn-sm">Ver dia completo</a>
+        </div>
+
+        @if (agendaHoy.Count == 0)
+        {
+            <div class="today-agenda-empty">
+                <strong>Sin reservas para hoy.</strong>
+                <span>La agenda diaria esta libre.</span>
+            </div>
+        }
+        else
+        {
+            <div class="today-agenda-list">
+                @foreach (var reserva in agendaHoy)
+                {
+                    <a asp-controller="Reservas" asp-action="Details" asp-route-id="@reserva.IdReserva" class="today-agenda-item">
+                        <time datetime="@reserva.Hora.ToString("HH:mm")">@reserva.Hora.ToString("HH:mm")</time>
+                        <div class="today-agenda-main">
+                            <strong>@reserva.Cliente?.Nombre</strong>
+                            <span>Mesa @reserva.Mesa?.Numero</span>
+                        </div>
+                        <span class="status-badge status-@reserva.Estado.ToLowerInvariant()">@reserva.Estado</span>
+                    </a>
+                }
+            </div>
+        }
+    </section>
+
     <div class="dashboard-hero">
         <div>
             <p class="eyebrow">Panel operativo</p>
@@ -20,27 +233,22 @@
         </div>
     </div>
 
-    @await Component.InvokeAsync("DashboardStats")
+    <section class="ops-strip" aria-label="Prioridades operativas">
+        <article>
+            <span>Hoy</span>
+            <strong>Revise la agenda antes del servicio</strong>
+        </article>
+        <article>
+            <span>Clientes</span>
+            <strong>Confirme pendientes con mensaje claro</strong>
+        </article>
+        <article>
+            <span>Menu</span>
+            <strong>Mantenga platos e imagenes actualizados</strong>
+        </article>
+    </section>
 
-    @if (reservasPendientes.Count > 0)
-    {
-        <section class="admin-alert-panel">
-            <div>
-                <p class="eyebrow">Notificacion interna</p>
-                <h2>@reservasPendientes.Count reserva(s) pendiente(s) por confirmar</h2>
-                <p>Revise las solicitudes nuevas para avisar al cliente por correo o WhatsApp.</p>
-            </div>
-            <div class="pending-list">
-                @foreach (var reserva in reservasPendientes)
-                {
-                    <a asp-controller="Reservas" asp-action="Edit" asp-route-id="@reserva.IdReserva">
-                        <strong>@reserva.CodigoReserva</strong>
-                        <span>@reserva.Cliente?.Nombre - @reserva.Fecha.ToString("dd/MM") @reserva.Hora.ToString("HH:mm")</span>
-                    </a>
-                }
-            </div>
-        </section>
-    }
+    @await Component.InvokeAsync("DashboardStats")
 
     <div class="admin-grid">
         <section class="page-shell">
@@ -110,3 +318,48 @@
         </div>
     </section>
 </section>
+
+<div class="modal fade" id="reservationStatusModal" tabindex="-1" aria-labelledby="reservationStatusModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content confirm-modal reservation-status-modal">
+            <form asp-controller="Admin" asp-action="CambiarEstadoReserva" method="post">
+                <input type="hidden" name="id" data-reservation-modal-id />
+                <input type="hidden" name="estado" data-reservation-modal-state />
+                <div class="modal-header">
+                    <div>
+                        <p class="eyebrow">Accion rapida</p>
+                        <h2 class="modal-title" id="reservationStatusModalTitle" data-reservation-modal-title>Confirmar reserva</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="modal-reservation-summary">
+                        <div>
+                            <dt>Cliente</dt>
+                            <dd data-reservation-modal-client></dd>
+                        </div>
+                        <div>
+                            <dt>Fecha</dt>
+                            <dd data-reservation-modal-date></dd>
+                        </div>
+                        <div>
+                            <dt>Hora</dt>
+                            <dd data-reservation-modal-time></dd>
+                        </div>
+                        <div>
+                            <dt>Mesa</dt>
+                            <dd data-reservation-modal-table></dd>
+                        </div>
+                    </dl>
+                    <p class="modal-status-note" data-reservation-modal-note>
+                        Revise los datos antes de confirmar la accion.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="modal">Volver</button>
+                    <button type="submit" class="btn btn-accent" data-reservation-modal-submit>Confirmar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

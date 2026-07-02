@@ -4,8 +4,11 @@
     ViewData["Title"] = "Editar cliente";
 }
 
-<section class="page-shell form-card">
-    <h1 class="h3 mb-4">Editar cliente</h1>
+<section class="container page-shell form-card admin-page">
+    <div class="form-heading">
+        <span>Directorio</span>
+        <strong>Editar cliente</strong>
+    </div>
 
     <form asp-action="Edit" method="post" class="row g-3">
         <input type="hidden" asp-for="IdCliente" />
@@ -25,7 +28,7 @@
             <input asp-for="Correo" class="form-control" />
             <span asp-validation-for="Correo" class="text-danger"></span>
         </div>
-        <div class="col-12 d-flex gap-2 justify-content-end">
+        <div class="col-12 form-actions">
             <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Actualizar</button>
         </div>

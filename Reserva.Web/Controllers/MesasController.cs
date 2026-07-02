@@ -9,6 +9,7 @@ namespace Reserva.Web.Controllers;
 [Authorize]
 public sealed class MesasController : Controller
 {
+    private const int MaxMesas = 20;
     private readonly ReservationDbContext _context;
 
     public MesasController(ReservationDbContext context)
@@ -21,8 +22,14 @@ public sealed class MesasController : Controller
         return View(await _context.Mesas.AsNoTracking().OrderBy(mesa => mesa.Numero).ToListAsync(cancellationToken));
     }
 
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
+        if (await _context.Mesas.CountAsync(cancellationToken) >= MaxMesas)
+        {
+            TempData["Error"] = "Mikuy tiene configurado un maximo de 20 mesas por el momento.";
+            return RedirectToAction(nameof(Index));
+        }
+
         return View(new Mesa());
     }
 
@@ -30,6 +37,16 @@ public sealed class MesasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Mesa mesa, CancellationToken cancellationToken)
     {
+        if (mesa.Numero is < 1 or > MaxMesas)
+        {
+            ModelState.AddModelError(nameof(mesa.Numero), "El numero de mesa debe estar entre 1 y 20.");
+        }
+
+        if (await _context.Mesas.CountAsync(cancellationToken) >= MaxMesas)
+        {
+            ModelState.AddModelError(string.Empty, "Mikuy tiene configurado un maximo de 20 mesas por el momento.");
+        }
+
         if (await _context.Mesas.AnyAsync(item => item.Numero == mesa.Numero, cancellationToken))
         {
             ModelState.AddModelError(nameof(mesa.Numero), "Ya existe una mesa con ese numero.");
@@ -64,6 +81,11 @@ public sealed class MesasController : Controller
         if (await _context.Mesas.AnyAsync(item => item.Numero == mesa.Numero && item.IdMesa != id, cancellationToken))
         {
             ModelState.AddModelError(nameof(mesa.Numero), "Ya existe una mesa con ese numero.");
+        }
+
+        if (mesa.Numero is < 1 or > MaxMesas)
+        {
+            ModelState.AddModelError(nameof(mesa.Numero), "El numero de mesa debe estar entre 1 y 20.");
         }
 
         if (!ModelState.IsValid)

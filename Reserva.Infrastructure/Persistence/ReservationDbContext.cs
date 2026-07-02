@@ -118,6 +118,7 @@ public sealed class ReservationDbContext : DbContext
 
             entity.HasIndex(reserva => new { reserva.IdMesa, reserva.Fecha, reserva.Hora })
                 .IsUnique()
+                .HasFilter("[Estado] <> 'Cancelada'")
                 .HasDatabaseName("UX_Reservas_Mesa_Fecha_Hora");
 
             entity.HasIndex(reserva => reserva.Estado);

@@ -7,18 +7,29 @@
         <small>Agenda del dia</small>
     </article>
     <article class="metric-card">
-        <span class="metric-label">Mesas activas</span>
-        <strong>@Model.MesasActivas</strong>
-        <small>Disponibles para asignar</small>
-    </article>
-    <article class="metric-card">
-        <span class="metric-label">Platos activos</span>
-        <strong>@Model.PlatosActivos</strong>
-        <small>Menu publicado</small>
-    </article>
-    <article class="metric-card">
-        <span class="metric-label">Por confirmar</span>
+        <span class="metric-label">Pendientes</span>
         <strong>@Model.ReservasPendientes</strong>
-        <small>@Model.TotalClientes clientes registrados</small>
+        <small>Requieren decision</small>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Confirmadas</span>
+        <strong>@Model.ReservasConfirmadas</strong>
+        <small>Servicio asegurado</small>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Canceladas</span>
+        <strong>@Model.ReservasCanceladas</strong>
+        <small>Fuera de la agenda</small>
+    </article>
+    <article class="metric-card occupancy-card occupancy-@Model.OcupacionEstado">
+        <span class="metric-label">Ocupacion</span>
+        <strong>@Model.OcupacionPorcentaje%</strong>
+        <small>@Model.MesasOcupadasActuales/@Model.MesasActivas mesas</small>
+        <em>@Model.OcupacionMensaje</em>
+    </article>
+    <article class="metric-card">
+        <span class="metric-label">Clientes esperados</span>
+        <strong>@Model.ClientesEsperados</strong>
+        <small>Personas por atender</small>
     </article>
 </div>

@@ -3,27 +3,39 @@
     ViewData["Title"] = "Acceso administrativo";
 }
 
-<section class="container auth-wrap">
-    <div class="page-shell form-card">
-        <p class="eyebrow">Equipo Mikuy</p>
-        <h1 class="h2">Acceso administrativo</h1>
-        <form asp-action="Login" method="post" class="row g-3">
+<section class="container auth-wrap admin-login-wrap">
+    <div class="admin-login-shell">
+        <aside class="admin-login-visual" aria-label="Modulo administrativo Mikuy">
+            <p class="eyebrow">Modulo interno</p>
+            <h1>Administracion Mikuy</h1>
+            <p>Gestiona reservas, mesas y atencion del restaurante desde un acceso seguro.</p>
+            <div class="admin-login-points">
+                <span>Reservas en tiempo real</span>
+                <span>Agenda operativa</span>
+                <span>Control de mesas</span>
+            </div>
+        </aside>
+
+        <div class="page-shell form-card admin-login-card">
+            <p class="eyebrow">Equipo Mikuy</p>
+            <h2>Acceso administrativo</h2>
+            <p class="form-note">Ingrese con una cuenta autorizada para gestionar reservas, mesas y menu.</p>
+        <form asp-action="Login" method="post" class="admin-login-form">
             <input asp-for="ReturnUrl" type="hidden" />
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="col-12">
+            <div>
                 <label asp-for="Usuario" class="form-label"></label>
                 <input asp-for="Usuario" class="form-control" autocomplete="username" />
                 <span asp-validation-for="Usuario" class="text-danger"></span>
             </div>
-            <div class="col-12">
+            <div>
                 <label asp-for="Password" class="form-label"></label>
                 <input asp-for="Password" class="form-control" autocomplete="current-password" />
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
-            <div class="col-12">
-                <button class="btn btn-accent w-100" type="submit">Ingresar</button>
-            </div>
+            <button class="btn btn-accent w-100" type="submit">Ingresar al modulo</button>
         </form>
+        </div>
     </div>
 </section>
 

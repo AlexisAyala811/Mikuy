@@ -2,6 +2,11 @@
 
 @{
     ViewData["Title"] = "Reserva recibida";
+    var mailSubject = Uri.EscapeDataString($"Codigo de reserva Mikuy {Model.CodigoReserva}");
+    var mailBody = Uri.EscapeDataString($"Hola, este es mi codigo de reserva en Mikuy: {Model.CodigoReserva}. Fecha: {Model.Fecha:dd/MM/yyyy}. Hora: {Model.Hora:HH:mm}. Estado: {Model.Estado}.");
+    var mailToUrl = string.IsNullOrWhiteSpace(Model.ClienteCorreo)
+        ? $"mailto:?subject={mailSubject}&body={mailBody}"
+        : $"mailto:{Model.ClienteCorreo}?subject={mailSubject}&body={mailBody}";
 }
 
 <section class="confirmation-hero">
@@ -10,9 +15,28 @@
             <p class="eyebrow">Reserva recibida</p>
             <h1>Gracias, @Model.ClienteNombre</h1>
             <p>Mikuy recibio su solicitud. El equipo administrativo revisara la disponibilidad y le avisara cuando la reserva sea confirmada o cancelada.</p>
+            <div class="reservation-sent-state">
+                <span aria-hidden="true">&#127881;</span>
+                <div>
+                    <strong>Solicitud enviada correctamente.</strong>
+                    <p>Codigo: <b>@Model.CodigoReserva</b></p>
+                </div>
+            </div>
             <div class="confirmation-code">
                 <span>Codigo de reserva</span>
                 <strong>@Model.CodigoReserva</strong>
+            </div>
+            <div class="confirmation-actions"
+                 data-last-reservation
+                 data-code="@Model.CodigoReserva"
+                 data-email="@Model.ClienteCorreo"
+                 data-date="@Model.Fecha.ToString("yyyy-MM-dd")"
+                 data-time="@Model.Hora.ToString("HH:mm")"
+                 data-status="@Model.Estado">
+                <button type="button" class="btn btn-accent" data-copy-text="@Model.CodigoReserva">Copiar codigo</button>
+                <a href="@Model.WhatsAppUrl" target="_blank" rel="noopener" class="btn btn-success">Enviar por WhatsApp</a>
+                <a href="@mailToUrl" class="btn btn-outline-light">Enviar al correo</a>
+                <a asp-action="Consultar" asp-route-codigoReserva="@Model.CodigoReserva" class="btn btn-outline-light">Ver mi reserva</a>
             </div>
         </div>
 
@@ -40,8 +64,8 @@
                 <p class="ticket-note">@Model.Comentario</p>
             }
             <div class="ticket-actions">
-                <a asp-action="Comprobante" asp-route-id="@Model.IdReserva" class="btn btn-accent">Descargar comprobante PDF</a>
-                <a asp-action="Consultar" class="btn btn-outline-dark">Consultar estado</a>
+                <a asp-action="Comprobante" asp-route-id="@Model.IdReserva" asp-route-code="@Model.CodigoReserva" class="btn btn-accent">Descargar comprobante PDF</a>
+                <a asp-action="Consultar" asp-route-codigoReserva="@Model.CodigoReserva" class="btn btn-outline-dark">Consultar estado</a>
             </div>
         </article>
     </div>

@@ -4,23 +4,24 @@
     ViewData["Title"] = "Detalle de cliente";
 }
 
-<section class="page-shell form-card">
-    <div class="d-flex justify-content-between align-items-start mb-4">
+<section class="container page-shell form-card admin-page detail-page">
+    <div class="detail-header">
         <div>
-            <h1 class="h3 mb-1">@Model.Nombre</h1>
+            <p class="eyebrow">Detalle del cliente</p>
+            <h1>@Model.Nombre</h1>
             <p class="text-muted mb-0">Detalle del cliente</p>
         </div>
-        <a asp-action="Edit" asp-route-id="@Model.IdCliente" class="btn btn-primary">Editar</a>
+        <div class="detail-actions">
+            <a asp-action="Edit" asp-route-id="@Model.IdCliente" class="btn btn-primary">Editar</a>
+        </div>
     </div>
 
-    <dl class="row mb-0">
-        <dt class="col-sm-3">Telefono</dt>
-        <dd class="col-sm-9">@Model.Telefono</dd>
-        <dt class="col-sm-3">Correo</dt>
-        <dd class="col-sm-9">@Model.Correo</dd>
+    <dl class="detail-grid">
+        <div><dt>Telefono</dt><dd>@Model.Telefono</dd></div>
+        <div><dt>Correo</dt><dd>@Model.Correo</dd></div>
     </dl>
 
-    <div class="mt-4">
+    <div class="form-actions mt-4">
         <a asp-action="Index" class="btn btn-outline-secondary">Volver</a>
     </div>
 </section>

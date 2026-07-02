@@ -150,20 +150,140 @@ public static class DataSeeder
 
     private static async Task SeedMesasAsync(ReservationDbContext context, CancellationToken cancellationToken)
     {
-        if (await context.Mesas.AnyAsync(cancellationToken))
+        await NormalizeMesasAsync(context, cancellationToken);
+
+        var existingNumbers = await context.Mesas
+            .Select(mesa => mesa.Numero)
+            .ToListAsync(cancellationToken);
+
+        var ubicaciones = new[] { "Patio colonial", "Salon principal", "Vista a la plaza", "Salon familiar", "Terraza" };
+        var capacidades = new[] { 2, 4, 4, 6, 6, 8 };
+        var mesasFaltantes = Enumerable.Range(1, 20)
+            .Where(numero => !existingNumbers.Contains(numero))
+            .Select(numero => new Mesa
+            {
+                Numero = numero,
+                Capacidad = capacidades[(numero - 1) % capacidades.Length],
+                Ubicacion = ubicaciones[(numero - 1) % ubicaciones.Length],
+                Activa = true
+            })
+            .ToList();
+
+        if (mesasFaltantes.Count == 0)
         {
             return;
         }
 
-        await context.Mesas.AddRangeAsync(
-        [
-            new Mesa { Numero = 1, Capacidad = 2, Ubicacion = "Patio colonial" },
-            new Mesa { Numero = 2, Capacidad = 4, Ubicacion = "Salon principal" },
-            new Mesa { Numero = 3, Capacidad = 4, Ubicacion = "Vista a la plaza" },
-            new Mesa { Numero = 4, Capacidad = 6, Ubicacion = "Salon familiar" },
-            new Mesa { Numero = 5, Capacidad = 8, Ubicacion = "Zona de celebraciones" }
-        ], cancellationToken);
+        var hasLegacyRestaurantColumn = await context.Database
+            .SqlQueryRaw<int>("SELECT CASE WHEN COL_LENGTH('dbo.Mesas', 'IdRestaurante') IS NULL THEN 0 ELSE 1 END AS [Value]")
+            .SingleAsync(cancellationToken) == 1;
 
+        if (!hasLegacyRestaurantColumn)
+        {
+            await context.Mesas.AddRangeAsync(mesasFaltantes, cancellationToken);
+            await context.SaveChangesAsync(cancellationToken);
+            return;
+        }
+
+        // Some existing local databases retain this mandatory legacy column.
+        // Reuse the restaurant associated with the current tables while the model remains single-restaurant.
+        var restaurantId = await context.Database
+            .SqlQueryRaw<int>("SELECT TOP (1) [IdRestaurante] AS [Value] FROM [Mesas] ORDER BY [IdMesa]")
+            .SingleAsync(cancellationToken);
+
+        foreach (var mesa in mesasFaltantes)
+        {
+            await context.Database.ExecuteSqlInterpolatedAsync(
+                $"INSERT INTO [Mesas] ([Numero], [Capacidad], [Ubicacion], [Activa], [IdRestaurante]) VALUES ({mesa.Numero}, {mesa.Capacidad}, {mesa.Ubicacion}, {mesa.Activa}, {restaurantId})",
+                cancellationToken);
+        }
+    }
+
+    private static async Task NormalizeMesasAsync(ReservationDbContext context, CancellationToken cancellationToken)
+    {
+        var mesas = await context.Mesas
+            .Include(mesa => mesa.Reservas)
+            .OrderBy(mesa => mesa.IdMesa)
+            .ToListAsync(cancellationToken);
+
+        if (mesas.Count <= 20 && mesas.Select(mesa => mesa.Numero).Distinct().Count() == mesas.Count)
+        {
+            return;
+        }
+
+        var selected = new List<Mesa>(20);
+        var remaining = new List<Mesa>(mesas);
+
+        // Keep one physical table for every visible number, preferring tables that already have reservations.
+        for (var number = 1; number <= 20; number++)
+        {
+            var candidate = remaining
+                .Where(mesa => mesa.Numero == number)
+                .OrderByDescending(mesa => mesa.Reservas.Count)
+                .ThenBy(mesa => mesa.IdMesa)
+                .FirstOrDefault()
+                ?? remaining
+                    .OrderByDescending(mesa => mesa.Reservas.Count)
+                    .ThenBy(mesa => mesa.IdMesa)
+                    .FirstOrDefault();
+
+            if (candidate is null)
+            {
+                break;
+            }
+
+            candidate.Numero = number;
+            selected.Add(candidate);
+            remaining.Remove(candidate);
+        }
+
+        if (selected.Count != 20)
+        {
+            return;
+        }
+
+        var occupiedSlots = selected
+            .SelectMany(mesa => mesa.Reservas
+                .Where(reserva => reserva.Estado != EstadosReserva.Cancelada)
+                .Select(reserva => (mesa.IdMesa, reserva.Fecha, reserva.Hora)))
+            .ToHashSet();
+
+        foreach (var duplicate in remaining)
+        {
+            foreach (var reserva in duplicate.Reservas.ToList())
+            {
+                var target = selected
+                    .Where(mesa => mesa.Capacidad >= reserva.CantidadPersonas)
+                    .OrderByDescending(mesa => mesa.Numero == duplicate.Numero)
+                    .ThenBy(mesa => mesa.Reservas.Count)
+                    .ThenBy(mesa => mesa.IdMesa)
+                    .FirstOrDefault(mesa => reserva.Estado == EstadosReserva.Cancelada ||
+                        !occupiedSlots.Contains((mesa.IdMesa, reserva.Fecha, reserva.Hora)));
+
+                // Keep the original table if a safe reassignment is not possible.
+                if (target is null)
+                {
+                    continue;
+                }
+
+                reserva.IdMesa = target.IdMesa;
+                reserva.Mesa = target;
+                target.Reservas.Add(reserva);
+
+                if (reserva.Estado != EstadosReserva.Cancelada)
+                {
+                    occupiedSlots.Add((target.IdMesa, reserva.Fecha, reserva.Hora));
+                }
+            }
+        }
+
+        var deletableDuplicates = remaining.Where(mesa => mesa.Reservas.Count == 0).ToList();
+        if (deletableDuplicates.Count == 0)
+        {
+            return;
+        }
+
+        context.Mesas.RemoveRange(deletableDuplicates);
         await context.SaveChangesAsync(cancellationToken);
     }
 
@@ -208,7 +328,8 @@ public static class DataSeeder
                 Descripcion = "Cuy dorado con textura crocante, papas y ensalada de la casa.",
                 Precio = 36m,
                 ImagenUrl = "/img/platos/cuy-chactado.png"
-            }
+            },
+            ..PlatosAdicionales()
         ], cancellationToken);
 
         await context.SaveChangesAsync(cancellationToken);
@@ -236,29 +357,7 @@ public static class DataSeeder
 
         var nuevos = new List<Plato>();
 
-        if (!nombres.Contains("Chicha morada de la casa"))
-        {
-            nuevos.Add(new Plato
-            {
-                Nombre = "Chicha morada de la casa",
-                Categoria = "Bebida",
-                Descripcion = "Bebida tradicional de maiz morado, canela y fruta, servida bien fria.",
-                Precio = 8m,
-                ImagenUrl = "/img/platos/qapchi.png"
-            });
-        }
-
-        if (!nombres.Contains("Mazamorra de quinua"))
-        {
-            nuevos.Add(new Plato
-            {
-                Nombre = "Mazamorra de quinua",
-                Categoria = "Postre",
-                Descripcion = "Postre suave de quinua, leche y especias dulces inspirado en la cocina andina.",
-                Precio = 10m,
-                ImagenUrl = "/img/platos/puca-picante.png"
-            });
-        }
+        nuevos.AddRange(PlatosAdicionales().Where(plato => !nombres.Contains(plato.Nombre)));
 
         if (nuevos.Count == 0)
         {
@@ -268,4 +367,88 @@ public static class DataSeeder
         await context.Platos.AddRangeAsync(nuevos, cancellationToken);
         await context.SaveChangesAsync(cancellationToken);
     }
+
+    private static List<Plato> PlatosAdicionales() =>
+    [
+        new Plato
+        {
+            Nombre = "Chicha morada de la casa",
+            Categoria = "Bebida",
+            Descripcion = "Bebida tradicional de maiz morado, canela y fruta, servida bien fria.",
+            Precio = 8m,
+            ImagenUrl = "/img/platos/chicha-morada.png"
+        },
+        new Plato
+        {
+            Nombre = "Mazamorra de quinua",
+            Categoria = "Postre",
+            Descripcion = "Postre suave de quinua, leche y especias dulces inspirado en la cocina andina.",
+            Precio = 10m,
+            ImagenUrl = "/img/platos/qapchi.png"
+        },
+        new Plato
+        {
+            Nombre = "Adobo ayacuchano",
+            Categoria = "Fondo",
+            Descripcion = "Cerdo marinado con aji, chicha de jora y especias, servido con pan artesanal.",
+            Precio = 24m,
+            ImagenUrl = "/img/platos/puca-picante.png"
+        },
+        new Plato
+        {
+            Nombre = "Caldo de cabeza",
+            Categoria = "Tradicional",
+            Descripcion = "Caldo intenso con hierbabuena, mote y papa para empezar el dia con energia.",
+            Precio = 20m,
+            ImagenUrl = "/img/platos/mondongo.png"
+        },
+        new Plato
+        {
+            Nombre = "Teqte ayacuchano",
+            Categoria = "Entrada",
+            Descripcion = "Guiso de arvejas, queso fresco, papa y hierbas de la region.",
+            Precio = 16m,
+            ImagenUrl = "/img/platos/qapchi.png"
+        },
+        new Plato
+        {
+            Nombre = "Chicharron con mote",
+            Categoria = "Fondo",
+            Descripcion = "Trozos crocantes de cerdo acompanados con mote, papa dorada y salsa criolla.",
+            Precio = 26m,
+            ImagenUrl = "/img/platos/cuy-chactado.png"
+        },
+        new Plato
+        {
+            Nombre = "Sopa de quinua",
+            Categoria = "Tradicional",
+            Descripcion = "Sopa nutritiva con quinua, verduras andinas y hierbas aromaticas.",
+            Precio = 15m,
+            ImagenUrl = "/img/platos/mondongo.png"
+        },
+        new Plato
+        {
+            Nombre = "Trucha andina",
+            Categoria = "Especial",
+            Descripcion = "Trucha dorada con papas nativas, ensalada fresca y salsa de huacatay.",
+            Precio = 30m,
+            ImagenUrl = "/img/platos/cuy-chactado.png"
+        },
+        new Plato
+        {
+            Nombre = "Humitas ayacuchanas",
+            Categoria = "Entrada",
+            Descripcion = "Maiz tierno molido, envuelto en panca y servido con queso fresco.",
+            Precio = 12m,
+            ImagenUrl = "/img/platos/qapchi.png"
+        },
+        new Plato
+        {
+            Nombre = "Dulce de calabaza",
+            Categoria = "Postre",
+            Descripcion = "Postre tradicional de calabaza confitada con canela y clavo de olor.",
+            Precio = 11m,
+            ImagenUrl = "/img/platos/puca-picante.png"
+        }
+    ];
 }

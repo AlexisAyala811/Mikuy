@@ -12,6 +12,8 @@ public sealed class ReservationConfirmationViewModel
 
     public string ClienteTelefono { get; set; } = string.Empty;
 
+    public string WhatsAppUrl { get; set; } = string.Empty;
+
     public DateOnly Fecha { get; set; }
 
     public TimeOnly Hora { get; set; }

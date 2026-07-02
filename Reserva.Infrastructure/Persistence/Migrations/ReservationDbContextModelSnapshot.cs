@@ -179,6 +179,7 @@ namespace Reserva.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("IdMesa", "Fecha", "Hora")
                         .IsUnique()
+                        .HasFilter("[Estado] <> 'Cancelada'")
                         .HasDatabaseName("UX_Reservas_Mesa_Fecha_Hora");
 
                     b.ToTable("Reservas", null, t =>

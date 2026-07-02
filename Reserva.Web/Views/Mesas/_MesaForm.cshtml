@@ -1,6 +1,9 @@
 @model Reserva.Domain.Entities.Mesa
 <section class="container page-shell form-card admin-page">
-    <h1 class="h2">@ViewData["Heading"]</h1>
+    <div class="form-heading">
+        <span>Salon</span>
+        <strong>@ViewData["Heading"]</strong>
+    </div>
     <form asp-action="@ViewData["Action"]" asp-route-id="@Model.IdMesa" method="post" class="row g-3">
         <input asp-for="IdMesa" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -19,11 +22,13 @@
             <input asp-for="Ubicacion" class="form-control" />
             <span asp-validation-for="Ubicacion" class="text-danger"></span>
         </div>
-        <div class="col-12 form-check ms-2">
+        <div class="col-12">
+            <div class="switch-row">
             <input asp-for="Activa" class="form-check-input" />
             <label asp-for="Activa" class="form-check-label"></label>
+            </div>
         </div>
-        <div class="col-12 d-flex gap-2 justify-content-end">
+        <div class="col-12 form-actions">
             <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-accent">Guardar</button>
         </div>

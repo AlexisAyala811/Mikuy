@@ -1,7 +1,9 @@
 @model IPagedList<ReservaDto>
+@using Reserva.Domain.Entities
 
-@{
+@{ 
     ViewData["Title"] = "Reservas";
+    var today = DateOnly.FromDateTime(DateTime.Today);
     var filterModel = new TableFilterViewModel
     {
         Search = ViewBag.Search,
@@ -28,26 +30,16 @@
     };
 }
 
-<section class="page-shell">
+<section class="container page-shell admin-page reservations-index">
     <div class="page-heading">
         <div>
             <h1>Reservas</h1>
-            <p>Consulta, agenda, filtra y evita cruces de horarios.</p>
+            <p>Primero se muestran las solicitudes pendientes y los proximos servicios.</p>
         </div>
         <a asp-action="Create" class="btn btn-primary">Nueva reserva</a>
     </div>
 
     <partial name="_TableFilters" model="filterModel" />
-
-    @if (TempData["WhatsAppUrl"] is string whatsAppUrl && !string.IsNullOrWhiteSpace(whatsAppUrl))
-    {
-        <div class="alert alert-success d-flex justify-content-between align-items-center gap-3 mt-3">
-            <span>Reserva actualizada. Puede avisar al cliente por WhatsApp.</span>
-            <a href="@whatsAppUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm">
-                @(TempData["WhatsAppText"] ?? "Enviar WhatsApp")
-            </a>
-        </div>
-    }
 
     <div class="table-responsive mt-3">
         <table class="table table-hover align-middle app-table">
@@ -68,7 +60,9 @@
             {
                 foreach (var item in Model)
                 {
-                    <tr>
+                    var isPriority = item.Estado == EstadosReserva.Pendiente && item.Fecha >= today;
+                    var isPast = item.Fecha < today;
+                    <tr class="@(isPriority ? "reservation-row-priority" : "") @(isPast ? "reservation-row-history" : "")">
                         <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
                         <td><span class="reservation-code">@item.CodigoReserva</span></td>
                         <td>@item.Hora.ToString("HH:mm")</td>
@@ -77,19 +71,17 @@
                         <td>@item.CantidadPersonas</td>
                         <td><span class="status-badge status-@item.Estado.ToLowerInvariant()">@item.Estado</span></td>
                         <td class="text-end">
-                            <div class="btn-group btn-group-sm" role="group">
-                                <a asp-action="Details" asp-route-id="@item.IdReserva" class="btn btn-outline-secondary">Detalle</a>
-                                <a asp-action="Edit" asp-route-id="@item.IdReserva" class="btn btn-outline-primary">Editar</a>
-                                <a href="@item.WhatsAppUrl" target="_blank" rel="noopener" class="btn btn-outline-success">WhatsApp</a>
-                                <a asp-action="Comprobante" asp-route-id="@item.IdReserva" class="btn btn-outline-dark">PDF</a>
-                                <button type="button"
-                                        class="btn btn-outline-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#confirmDeleteModal"
-                                        data-delete-url="@Url.Action("Delete", "Reservas", new { id = item.IdReserva })"
-                                        data-delete-text="Reserva de @item.ClienteNombre el @item.Fecha.ToString("dd/MM/yyyy") a las @item.Hora.ToString("HH:mm")">
-                                    Eliminar
-                                </button>
+                            <div class="reservation-actions">
+                                <a asp-action="Details" asp-route-id="@item.IdReserva" class="row-primary-action">Ver detalle</a>
+                                <div class="dropdown">
+                                    <button class="row-more-actions" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Mas acciones para la reserva @item.CodigoReserva">•••</button>
+                                    <ul class="dropdown-menu dropdown-menu-end reservation-action-menu">
+                                        <li><a asp-action="Edit" asp-route-id="@item.IdReserva" class="dropdown-item">Editar reserva</a></li>
+                                        <li><a asp-action="Comprobante" asp-route-id="@item.IdReserva" class="dropdown-item">Descargar PDF</a></li>
+                                        <li><hr class="dropdown-divider" /></li>
+                                        <li><a asp-action="Delete" asp-route-id="@item.IdReserva" class="dropdown-item text-danger">Eliminar reserva</a></li>
+                                    </ul>
+                                </div>
                             </div>
                         </td>
                     </tr>
@@ -109,5 +101,3 @@
              model="Model"
              view-data='new ViewDataDictionary(ViewData) { ["AriaLabel"] = "Paginacion de reservas", ["RouteValues"] = new { search = ViewBag.Search, estado = ViewBag.Estado, fecha = ViewBag.Fecha, sort = ViewBag.Sort } }' />
 </section>
-
-<partial name="_ConfirmDeleteModal" />

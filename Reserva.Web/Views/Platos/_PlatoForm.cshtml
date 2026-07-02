@@ -1,6 +1,9 @@
 @model Reserva.Domain.Entities.Plato
 <section class="container page-shell form-card admin-page">
-    <h1 class="h2">@ViewData["Heading"]</h1>
+    <div class="form-heading">
+        <span>Menu publico</span>
+        <strong>@ViewData["Heading"]</strong>
+    </div>
     <form asp-action="@ViewData["Action"]" asp-route-id="@Model.IdPlato" method="post" enctype="multipart/form-data" class="row g-3">
         <input asp-for="IdPlato" type="hidden" />
         <div asp-validation-summary="ModelOnly" class="text-danger"></div>
@@ -39,11 +42,13 @@
                 <img src="@Model.ImagenUrl" alt="Vista previa de @Model.Nombre" />
             </div>
         </div>
-        <div class="col-12 form-check ms-2">
+        <div class="col-12">
+            <div class="switch-row">
             <input asp-for="Activo" class="form-check-input" />
             <label asp-for="Activo" class="form-check-label"></label>
+            </div>
         </div>
-        <div class="col-12 d-flex gap-2 justify-content-end">
+        <div class="col-12 form-actions">
             <a asp-action="Admin" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-accent">Guardar</button>
         </div>

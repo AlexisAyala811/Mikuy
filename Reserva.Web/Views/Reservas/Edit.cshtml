@@ -4,8 +4,11 @@
     ViewData["Title"] = "Editar reserva";
 }
 
-<section class="page-shell form-card">
-    <h1 class="h3 mb-4">Editar reserva</h1>
+<section class="container page-shell form-card admin-page">
+    <div class="form-heading">
+        <span>Agenda interna</span>
+        <strong>Editar reserva</strong>
+    </div>
 
     <form asp-action="Edit" method="post" class="row g-3 reserva-form" data-reserva-id="@Model.IdReserva">
         <input type="hidden" asp-for="IdReserva" />
@@ -44,7 +47,7 @@
         </div>
         <div class="col-12 col-md-6">
             <label asp-for="CantidadPersonas" class="form-label"></label>
-            <input asp-for="CantidadPersonas" type="number" min="1" max="24" class="form-control" />
+            <input asp-for="CantidadPersonas" type="number" min="1" max="24" class="form-control reserva-personas" />
             <span asp-validation-for="CantidadPersonas" class="text-danger"></span>
         </div>
         <div class="col-12">
@@ -52,7 +55,7 @@
             <textarea asp-for="Comentario" class="form-control" rows="3"></textarea>
             <span asp-validation-for="Comentario" class="text-danger"></span>
         </div>
-        <div class="col-12 d-flex gap-2 justify-content-end">
+        <div class="col-12 form-actions">
             <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary">Actualizar</button>
         </div>

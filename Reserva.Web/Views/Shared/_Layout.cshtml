@@ -3,13 +3,58 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Mikuy: reservas, platos tradicionales y cultura ayacuchana en Huamanga." />
+    <meta name="theme-color" content="#2b1c17" />
     <title>@ViewData["Title"] - Mikuy</title>
     <script type="importmap"></script>
+    <link rel="preload" as="image" href="/img/hero/mikuy-ayacucho.png" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/motion-system.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/Reserva.Web.styles.css" asp-append-version="true" />
 </head>
-<body>
+@{
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var isInicio = currentController == "Home" && currentAction == "Index";
+    var isPlatos = currentController == "Platos";
+    var isCultura = currentController == "Home" && currentAction == "Cultura";
+    var isReservas = currentController == "Reservas" && currentAction != "Consultar";
+    var isConsultar = currentController == "Reservas" && currentAction == "Consultar";
+    var isContacto = currentController == "Home" && currentAction == "Contacto";
+    var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isAdminArea = isAuthenticated && currentController is "Admin" or "Reservas" or "Clientes" or "Mesas" or "Platos";
+    var adminSection = currentController switch
+    {
+        "Admin" => "dashboard",
+        "Reservas" => "reservas",
+        "Clientes" => "clientes",
+        "Mesas" => "mesas",
+        "Platos" => "platos",
+        _ => "dashboard"
+    };
+    var isAdminDashboard = isAuthenticated && currentController == "Admin";
+    var isAdminReservas = isAuthenticated && currentController == "Reservas";
+    var isAdminClientes = isAuthenticated && currentController == "Clientes";
+    var isAdminMesas = isAuthenticated && currentController == "Mesas";
+    var isAdminPlatos = isAuthenticated && currentController == "Platos";
+    var bodyClasses = string.Join(" ", new[]
+    {
+        isInicio && !isAuthenticated ? "home-hero-nav" : "",
+        !isAuthenticated && (isConsultar || isReservas || isContacto || (currentController == "Cuenta" && currentAction == "Login") || (currentController == "Clientes" && currentAction == "Registro")) ? "mikuy-warm-page" : ""
+    }.Where(item => !string.IsNullOrWhiteSpace(item)));
+}
+<body class="@bodyClasses">
+    <a class="skip-link" href="#main-content">Saltar al contenido</a>
+    <div class="smart-cursor-label" data-smart-cursor aria-hidden="true">Explorar</div>
+    @if (!isAuthenticated)
+    {
+        <div class="ayacucho-particles" aria-hidden="true">
+            <span class="ayacucho-particle particle-weave"></span>
+            <span class="ayacucho-particle particle-diamond"></span>
+            <span class="ayacucho-particle particle-line"></span>
+        </div>
+    }
     <header class="mikuy-header">
         <nav class="navbar navbar-expand-lg navbar-dark container">
             <a class="navbar-brand mikuy-brand" asp-controller="Home" asp-action="Index">Mikuy</a>
@@ -17,46 +62,64 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="mikuyNav">
-                <div class="navbar-nav me-auto">
-                    <a class="nav-link" asp-controller="Home" asp-action="Index">Inicio</a>
-                    <a class="nav-link" asp-controller="Platos" asp-action="Index">Platos</a>
-                    <a class="nav-link" asp-controller="Home" asp-action="Cultura">Cultura</a>
-                    <a class="nav-link" asp-controller="Reservas" asp-action="Reservar">Reservas</a>
-                    <a class="nav-link" asp-controller="Reservas" asp-action="Consultar">Consultar</a>
-                    <a class="nav-link" asp-controller="Home" asp-action="Contacto">Contacto</a>
-                </div>
+                @if (!isAuthenticated)
+                {
+                    <div class="navbar-nav me-auto">
+                        <a class="nav-link nav-section-inicio @(isInicio ? "active" : "")" aria-current="@(isInicio ? "page" : null)" asp-controller="Home" asp-action="Index">Inicio</a>
+                        <a class="nav-link nav-section-platos @(isPlatos ? "active" : "")" aria-current="@(isPlatos ? "page" : null)" asp-controller="Platos" asp-action="Index">Platos</a>
+                        <a class="nav-link nav-section-cultura @(isCultura ? "active" : "")" aria-current="@(isCultura ? "page" : null)" asp-controller="Home" asp-action="Cultura">Cultura</a>
+                        <a class="nav-link nav-section-reservas @(isReservas ? "active" : "")" aria-current="@(isReservas ? "page" : null)" asp-controller="Reservas" asp-action="Reservar">Reservas</a>
+                        <a class="nav-link nav-section-consultar @(isConsultar ? "active" : "")" aria-current="@(isConsultar ? "page" : null)" asp-controller="Reservas" asp-action="Consultar">Consultar</a>
+                        <a class="nav-link nav-section-contacto @(isContacto ? "active" : "")" aria-current="@(isContacto ? "page" : null)" asp-controller="Home" asp-action="Contacto">Contacto</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="navbar-nav me-auto admin-header-spacer" aria-hidden="true"></div>
+                }
                 <div class="mikuy-nav-actions">
-                    @if (User.Identity?.IsAuthenticated == true)
+                    @if (!isAuthenticated)
                     {
-                        <a class="btn btn-outline-light btn-sm" asp-controller="Admin" asp-action="Dashboard">Panel</a>
+                        <div class="restaurant-status nav-restaurant-status status-closed" data-restaurant-status data-open-hour="12" data-close-hour="22" aria-live="polite">
+                            <span class="restaurant-status-dot" aria-hidden="true"></span>
+                            <div>
+                                <strong data-restaurant-status-title>Cargando horario</strong>
+                                <small data-restaurant-status-detail>Lunes a domingo</small>
+                            </div>
+                        </div>
+                    }
+                    @if (isAuthenticated)
+                    {
                         <form asp-controller="Cuenta" asp-action="Logout" method="post">
-                            <button class="btn btn-sm btn-accent" type="submit">Salir</button>
+                            <button class="nav-action-link" type="submit">Salir</button>
                         </form>
                     }
                     else
                     {
-                        <a class="btn btn-outline-light btn-sm" asp-controller="Clientes" asp-action="Registro">Registro</a>
-                        <a class="btn btn-sm btn-accent" asp-controller="Cuenta" asp-action="Login">Administrador</a>
+                        <div class="nav-account-actions" aria-label="Accesos de cuenta">
+                            <a class="nav-action-link" asp-controller="Clientes" asp-action="Registro">Registro</a>
+                            <a class="nav-action-link nav-action-link-strong" asp-controller="Cuenta" asp-action="Login">Administrador</a>
+                        </div>
                     }
                 </div>
             </div>
         </nav>
     </header>
 
-    @if (User.Identity?.IsAuthenticated == true)
+    @if (isAuthenticated)
     {
-        <nav class="admin-strip" aria-label="Administracion">
+        <nav class="admin-strip admin-section-@adminSection" aria-label="Administracion">
             <div class="container">
-                <a asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
-                <a asp-controller="Reservas" asp-action="Index">Reservas</a>
-                <a asp-controller="Clientes" asp-action="Index">Clientes</a>
-                <a asp-controller="Mesas" asp-action="Index">Mesas</a>
-                <a asp-controller="Platos" asp-action="Admin">Platos</a>
+                <a class="admin-link admin-link-dashboard @(isAdminDashboard ? "active" : "")" aria-current="@(isAdminDashboard ? "page" : null)" asp-controller="Admin" asp-action="Dashboard">Dashboard</a>
+                <a class="admin-link admin-link-reservas @(isAdminReservas ? "active" : "")" aria-current="@(isAdminReservas ? "page" : null)" asp-controller="Reservas" asp-action="Index">Reservas</a>
+                <a class="admin-link admin-link-clientes @(isAdminClientes ? "active" : "")" aria-current="@(isAdminClientes ? "page" : null)" asp-controller="Clientes" asp-action="Index">Clientes</a>
+                <a class="admin-link admin-link-mesas @(isAdminMesas ? "active" : "")" aria-current="@(isAdminMesas ? "page" : null)" asp-controller="Mesas" asp-action="Index">Mesas</a>
+                <a class="admin-link admin-link-platos @(isAdminPlatos ? "active" : "")" aria-current="@(isAdminPlatos ? "page" : null)" asp-controller="Platos" asp-action="Admin">Platos</a>
             </div>
         </nav>
     }
 
-    <main role="main" class="content-shell">
+    <main id="main-content" role="main" class="content-shell">
         @RenderBody()
     </main>
 
@@ -72,12 +135,32 @@
             </div>
             <div>
                 <span>Contacto</span>
-                <p>Huamanga, Ayacucho, Peru<br />+51 999 999 999</p>
+                <p>Huamanga, Ayacucho, Peru<br /><a href="tel:+51999999999">+51 999 999 999</a></p>
+            </div>
+            <div class="footer-map">
+                <iframe
+                    title="Mapa compacto de Mikuy"
+                    src="https://www.google.com/maps?q=Huamanga%2C%20Ayacucho%2C%20Peru&output=embed"
+                    loading="lazy"
+                    referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+                <a href="https://www.google.com/maps/search/?api=1&query=Huamanga%2C%20Ayacucho%2C%20Peru" target="_blank" rel="noopener">Ver ubicacion</a>
             </div>
         </div>
     </footer>
 
     <partial name="_ToastNotifications" />
+
+    @if (!isAuthenticated)
+    {
+    <a class="whatsapp-floating"
+       href="https://wa.me/51999999999?text=Hola%20Mikuy%2C%20quiero%20hacer%20una%20consulta%20sobre%20una%20reserva."
+       target="_blank"
+       rel="noopener"
+       aria-label="Reservar por WhatsApp">
+        <span aria-hidden="true">💬</span>
+    </a>
+    }
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
