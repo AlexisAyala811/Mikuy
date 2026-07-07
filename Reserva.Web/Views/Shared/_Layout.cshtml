@@ -23,6 +23,7 @@
     var isConsultar = currentController == "Reservas" && currentAction == "Consultar";
     var isContacto = currentController == "Home" && currentAction == "Contacto";
     var isAuthenticated = User.Identity?.IsAuthenticated == true;
+    var isClientRegistered = !isAuthenticated && Context.Request.Cookies.ContainsKey("Mikuy.ClienteId");
     var isAdminArea = isAuthenticated && currentController is "Admin" or "Reservas" or "Clientes" or "Mesas" or "Platos";
     var adminSection = currentController switch
     {
@@ -88,7 +89,7 @@
                             </div>
                         </div>
                     }
-                    @if (isAuthenticated)
+                    @if (isAuthenticated || isClientRegistered)
                     {
                         <form asp-controller="Cuenta" asp-action="Logout" method="post">
                             <button class="nav-action-link" type="submit">Salir</button>
@@ -97,7 +98,7 @@
                     else
                     {
                         <div class="nav-account-actions" aria-label="Accesos de cuenta">
-                            <a class="nav-action-link" asp-controller="Clientes" asp-action="Registro">Registro</a>
+                            <a class="nav-action-link" asp-controller="Clientes" asp-action="Registro">Acceso cliente</a>
                             <a class="nav-action-link nav-action-link-strong" asp-controller="Cuenta" asp-action="Login">Administrador</a>
                         </div>
                     }

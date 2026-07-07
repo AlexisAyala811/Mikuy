@@ -82,8 +82,41 @@ public sealed class ClientesController : Controller
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Acceso(string? contacto, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(contacto))
+        {
+            ViewBag.AccessError = "Ingrese el correo o telefono usado al registrarse.";
+            return View(nameof(Registro), new ClienteDto());
+        }
+
+        var term = contacto.Trim();
+        var digits = NormalizeDigits(term);
+
+        var cliente = term.Contains('@', StringComparison.Ordinal)
+            ? await _context.Clientes.FirstOrDefaultAsync(item => item.Correo == term.ToLowerInvariant(), cancellationToken)
+            : await _context.Clientes.FirstOrDefaultAsync(item => item.Telefono.Contains(digits), cancellationToken);
+
+        if (cliente is null)
+        {
+            ViewBag.AccessError = "No encontramos un cliente con esos datos. Puede registrarse como nuevo cliente.";
+            return View(nameof(Registro), new ClienteDto());
+        }
+
+        SignInClient(cliente);
+        TempData["Success"] = $"Bienvenido, {cliente.Nombre}. Sus datos se cargaran automaticamente.";
+        return RedirectToAction("Reservar", "Reservas");
+    }
+
+    [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Registro(ClienteDto dto, CancellationToken cancellationToken)
     {
+        dto.Nombre = dto.Nombre.Trim();
+        dto.Telefono = NormalizeDigits(dto.Telefono);
+        dto.Correo = dto.Correo.Trim().ToLowerInvariant();
+
         await ValidateClienteAsync(dto, cancellationToken);
 
         if (!ModelState.IsValid)
@@ -93,6 +126,7 @@ public sealed class ClientesController : Controller
 
         _context.Clientes.Add(_mapper.Map<Cliente>(dto));
         await _context.SaveChangesAsync(cancellationToken);
+        await SignInClientAsync(dto.Correo, cancellationToken);
         TempData["Success"] = "Cliente registrado. Ya puede reservar en Mikuy.";
         return RedirectToAction("Reservar", "Reservas");
     }
@@ -224,5 +258,39 @@ public sealed class ClientesController : Controller
         {
             ModelState.AddModelError(nameof(dto.Correo), "Ya existe un cliente registrado con este correo.");
         }
+    }
+
+    private async Task SignInClientAsync(string correo, CancellationToken cancellationToken)
+    {
+        var cliente = await _context.Clientes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.Correo == correo, cancellationToken);
+
+        if (cliente is null)
+        {
+            return;
+        }
+
+        SignInClient(cliente);
+    }
+
+    private void SignInClient(Cliente cliente)
+    {
+        Response.Cookies.Append(
+            "Mikuy.ClienteId",
+            cliente.IdCliente.ToString(),
+            new CookieOptions
+            {
+                HttpOnly = true,
+                SameSite = SameSiteMode.Lax,
+                Expires = DateTimeOffset.UtcNow.AddDays(30)
+            });
+    }
+
+    private static string NormalizeDigits(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : new string(value.Where(char.IsDigit).ToArray());
     }
 }

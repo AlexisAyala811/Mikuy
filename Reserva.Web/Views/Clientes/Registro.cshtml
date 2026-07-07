@@ -1,50 +1,97 @@
 @model ClienteDto
 @{
-    ViewData["Title"] = "Registro de cliente";
+    ViewData["Title"] = "Acceso cliente";
+    var accessError = ViewBag.AccessError as string;
+    var activePanel = !ViewData.ModelState.IsValid && string.IsNullOrWhiteSpace(accessError) ? "new" : "existing";
 }
 
 <section class="container auth-wrap client-register-wrap">
     <div class="client-register-shell">
         <aside class="client-register-visual" aria-label="Registro de cliente Mikuy">
-            <p class="eyebrow">Cliente Mikuy</p>
-            <h1>Reserva con mas rapidez</h1>
-            <p>Guarda tus datos para que el equipo pueda reconocer tus futuras solicitudes y confirmar tu mesa con menos pasos.</p>
+            <p class="eyebrow">Acceso cliente</p>
+            <h1>Reserva con menos pasos</h1>
+            <p>Si ya estas registrado, ingresa con tu correo o telefono. Si es tu primera vez, guarda tus datos una sola vez.</p>
             <div class="client-register-points">
-                <span>Datos seguros</span>
-                <span>Confirmacion mas agil</span>
-                <span>Atencion personalizada</span>
+                <span>Datos recordados</span>
+                <span>Reserva mas rapida</span>
+                <span>Seguimiento sencillo</span>
             </div>
         </aside>
 
         <div class="page-shell form-card client-register-card">
-            <p class="eyebrow">Nuevo cliente</p>
-            <h2>Registro</h2>
-            <p class="form-note">Complete sus datos principales para futuras reservas en Mikuy.</p>
-        <form asp-action="Registro" method="post" class="client-register-form">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div>
-                <label asp-for="Nombre" class="form-label"></label>
-                <input asp-for="Nombre" class="form-control" />
-                <span asp-validation-for="Nombre" class="text-danger"></span>
+            <p class="eyebrow">Cliente Mikuy</p>
+            <h2>Acceso cliente</h2>
+            <p class="form-note">Elija como desea continuar con su reserva.</p>
+
+            <div class="client-access-switch" role="tablist" aria-label="Tipo de acceso">
+                <button class="@(activePanel == "existing" ? "active" : "")" type="button" data-client-access-tab="existing" role="tab" aria-selected="@(activePanel == "existing" ? "true" : "false")">Ya estoy registrado</button>
+                <button class="@(activePanel == "new" ? "active" : "")" type="button" data-client-access-tab="new" role="tab" aria-selected="@(activePanel == "new" ? "true" : "false")">Soy nuevo cliente</button>
             </div>
-            <div class="client-register-grid">
-            <div>
-                <label asp-for="Telefono" class="form-label"></label>
-                <input asp-for="Telefono" class="form-control" />
-                <span asp-validation-for="Telefono" class="text-danger"></span>
+
+            <div class="client-access-panel @(activePanel == "existing" ? "active" : "")" data-client-access-panel="existing" hidden="@(activePanel != "existing")">
+                <form asp-action="Acceso" method="post" class="client-register-form">
+                    @if (!string.IsNullOrWhiteSpace(accessError))
+                    {
+                        <div class="client-access-error">@accessError</div>
+                    }
+                    <div>
+                        <label for="contacto" class="form-label">Correo o telefono</label>
+                        <input id="contacto" name="contacto" class="form-control" autocomplete="email" placeholder="Ej. cliente@email.com o 999999999" />
+                    </div>
+                    <button class="btn btn-accent w-100" type="submit">Continuar a reservar</button>
+                </form>
             </div>
-            <div>
-                <label asp-for="Correo" class="form-label"></label>
-                <input asp-for="Correo" class="form-control" />
-                <span asp-validation-for="Correo" class="text-danger"></span>
+
+            <div class="client-access-panel @(activePanel == "new" ? "active" : "")" data-client-access-panel="new" hidden="@(activePanel != "new")">
+                <form asp-action="Registro" method="post" class="client-register-form">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div>
+                        <label asp-for="Nombre" class="form-label"></label>
+                        <input asp-for="Nombre" class="form-control" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+                    <div class="client-register-grid">
+                        <div>
+                            <label asp-for="Telefono" class="form-label"></label>
+                            <input asp-for="Telefono" class="form-control" />
+                            <span asp-validation-for="Telefono" class="text-danger"></span>
+                        </div>
+                        <div>
+                            <label asp-for="Correo" class="form-label"></label>
+                            <input asp-for="Correo" class="form-control" />
+                            <span asp-validation-for="Correo" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <button class="btn btn-accent w-100" type="submit">Crear acceso cliente</button>
+                </form>
             </div>
-            </div>
-            <button class="btn btn-accent w-100" type="submit">Registrarme</button>
-        </form>
         </div>
     </div>
 </section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        (() => {
+            const tabs = document.querySelectorAll("[data-client-access-tab]");
+            const panels = document.querySelectorAll("[data-client-access-panel]");
+
+            tabs.forEach((tab) => {
+                tab.addEventListener("click", () => {
+                    const target = tab.dataset.clientAccessTab;
+                    tabs.forEach((item) => {
+                        const active = item === tab;
+                        item.classList.toggle("active", active);
+                        item.setAttribute("aria-selected", active.toString());
+                    });
+
+                    panels.forEach((panel) => {
+                        const active = panel.dataset.clientAccessPanel === target;
+                        panel.classList.toggle("active", active);
+                        panel.hidden = !active;
+                    });
+                });
+            });
+        })();
+    </script>
 }

@@ -124,7 +124,7 @@
             const result = await response.json();
 
             if (result.available) {
-                setAvailability("available", "✅ Mesa disponible", result.message, result.table ?? "", "✓");
+                setAvailability("available", "Mesa disponible", result.message, result.table ?? "", "✓");
             } else {
                 setAvailability("unavailable", "❌ No encontramos disponibilidad.", result.message, "", "×");
                 showStep(1);

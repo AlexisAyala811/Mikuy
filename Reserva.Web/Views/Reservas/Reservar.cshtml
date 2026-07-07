@@ -1,6 +1,8 @@
 @model ReservaPublicaViewModel
 @{
     ViewData["Title"] = "Reservar";
+    var registeredClient = ViewBag.RegisteredClient;
+    var hasRegisteredClient = registeredClient is not null;
 }
 
 <section class="reservation-public">
@@ -73,25 +75,41 @@
                     <div class="step-heading">
                         <span>Paso 2</span>
                         <h2 id="reservationStepTwoTitle">Datos de contacto</h2>
-                        <p>Con la mesa disponible, complete sus datos para enviar la solicitud al equipo de Mikuy.</p>
+                        <p>@(hasRegisteredClient ? "Sus datos ya estan registrados. Agregue solo un comentario si desea comunicar algo al equipo." : "Con la mesa disponible, complete sus datos para enviar la solicitud al equipo de Mikuy.")</p>
                     </div>
 
                     <div class="row g-3">
-                        <div class="col-12">
-                            <label asp-for="NombreCliente" class="form-label"></label>
-                            <input asp-for="NombreCliente" class="form-control" />
-                            <span asp-validation-for="NombreCliente" class="text-danger"></span>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label asp-for="Telefono" class="form-label"></label>
-                            <input asp-for="Telefono" class="form-control" />
-                            <span asp-validation-for="Telefono" class="text-danger"></span>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label asp-for="Correo" class="form-label"></label>
-                            <input asp-for="Correo" class="form-control" />
-                            <span asp-validation-for="Correo" class="text-danger"></span>
-                        </div>
+                        @if (hasRegisteredClient)
+                        {
+                            <input asp-for="NombreCliente" type="hidden" />
+                            <input asp-for="Telefono" type="hidden" />
+                            <input asp-for="Correo" type="hidden" />
+                            <div class="col-12">
+                                <div class="registered-client-summary">
+                                    <span>Cliente registrado</span>
+                                    <strong>@Model.NombreCliente</strong>
+                                    <small>@Model.Telefono - @Model.Correo</small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-12">
+                                <label asp-for="NombreCliente" class="form-label"></label>
+                                <input asp-for="NombreCliente" class="form-control" />
+                                <span asp-validation-for="NombreCliente" class="text-danger"></span>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Telefono" class="form-label"></label>
+                                <input asp-for="Telefono" class="form-control" />
+                                <span asp-validation-for="Telefono" class="text-danger"></span>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label asp-for="Correo" class="form-label"></label>
+                                <input asp-for="Correo" class="form-control" />
+                                <span asp-validation-for="Correo" class="text-danger"></span>
+                            </div>
+                        }
                         <div class="col-12">
                             <label asp-for="Comentario" class="form-label"></label>
                             <textarea asp-for="Comentario" class="form-control" rows="3"></textarea>

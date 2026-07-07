@@ -2093,14 +2093,60 @@ button:focus-visible {
 }
 
 .availability-available {
-  background: #eef7ea;
-  border-color: #b8d8a9;
-  box-shadow: 0 12px 28px rgba(47, 143, 96, 0.1);
+  background: linear-gradient(135deg, #f7fff3 0%, #e5f5dd 100%);
+  border-color: rgba(47, 143, 96, 0.42);
+  box-shadow: 0 14px 30px rgba(47, 143, 96, 0.14);
+}
+
+.availability-available strong {
+  color: #135c36;
+  font-size: 1.03rem;
+  letter-spacing: 0;
+}
+
+.availability-available p {
+  color: #4f5d46;
+}
+
+.availability-available small {
+  color: #241812;
+  font-size: 0.98rem;
 }
 
 .availability-available .availability-icon {
   background: #2f8f60;
   color: #fff;
+}
+
+.registered-client-summary {
+  background: linear-gradient(135deg, rgba(255, 241, 212, 0.96), rgba(235, 196, 135, 0.86));
+  border: 1px solid rgba(151, 52, 31, 0.22);
+  box-shadow: 0 16px 34px rgba(82, 38, 21, 0.13);
+  color: var(--ink);
+  padding: 1rem;
+}
+
+.registered-client-summary span {
+  color: var(--clay);
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.registered-client-summary strong {
+  color: var(--burnt);
+  display: block;
+  font-size: 1.35rem;
+  margin-top: 0.18rem;
+}
+
+.registered-client-summary small {
+  color: #5d463a;
+  display: block;
+  font-weight: 700;
+  margin-top: 0.2rem;
 }
 
 .availability-unavailable {
@@ -2622,6 +2668,51 @@ button:focus-visible {
 .client-register-card .form-note {
   color: #62483a;
   font-weight: 700;
+}
+
+.client-access-switch {
+  background: rgba(255, 248, 235, 0.62);
+  border: 1px solid rgba(90, 28, 18, 0.16);
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 1.25rem 0;
+  padding: 0.45rem;
+}
+
+.client-access-switch button {
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #6b5144;
+  font-weight: 950;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.75rem;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.client-access-switch button:hover {
+  background: rgba(139, 46, 26, 0.08);
+  color: var(--burnt);
+  transform: translateY(-1px);
+}
+
+.client-access-switch button.active {
+  background: rgba(139, 46, 26, 0.12);
+  border-color: var(--marigold);
+  color: var(--burnt);
+}
+
+.client-access-panel {
+  animation: fadeUp 220ms ease both;
+}
+
+.client-access-error {
+  background: rgba(151, 52, 31, 0.12);
+  border: 1px solid rgba(151, 52, 31, 0.24);
+  color: var(--burnt);
+  font-weight: 850;
+  padding: 0.8rem 0.9rem;
 }
 
 .client-register-form {

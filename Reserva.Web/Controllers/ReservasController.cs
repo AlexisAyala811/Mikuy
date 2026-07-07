@@ -448,6 +448,15 @@ public sealed class ReservasController : Controller
     public async Task<IActionResult> Reservar(CancellationToken cancellationToken)
     {
         var model = new ReservaPublicaViewModel();
+        var cliente = await GetCurrentClientAsync(cancellationToken);
+        if (cliente is not null)
+        {
+            model.NombreCliente = cliente.Nombre;
+            model.Telefono = cliente.Telefono;
+            model.Correo = cliente.Correo;
+            ViewBag.RegisteredClient = cliente;
+        }
+
         await LoadPublicTimesAsync(model.Fecha, cancellationToken);
         return View(model);
     }
@@ -458,6 +467,18 @@ public sealed class ReservasController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Reservar(ReservaPublicaViewModel model, CancellationToken cancellationToken)
     {
+        var registeredClient = await GetCurrentClientAsync(cancellationToken);
+        if (registeredClient is not null)
+        {
+            model.NombreCliente = registeredClient.Nombre;
+            model.Telefono = registeredClient.Telefono;
+            model.Correo = registeredClient.Correo;
+            ViewBag.RegisteredClient = registeredClient;
+            ModelState.Remove(nameof(model.NombreCliente));
+            ModelState.Remove(nameof(model.Telefono));
+            ModelState.Remove(nameof(model.Correo));
+        }
+
         if (model.Fecha < DateOnly.FromDateTime(DateTime.Today))
         {
             ModelState.AddModelError(nameof(model.Fecha), "Seleccione una fecha vigente.");
@@ -488,7 +509,9 @@ public sealed class ReservasController : Controller
 
         var correo = model.Correo.Trim().ToLowerInvariant();
         var telefono = NormalizeDigits(model.Telefono);
-        var cliente = await _context.Clientes.FirstOrDefaultAsync(item => item.Correo == correo, cancellationToken);
+        var cliente = registeredClient is null
+            ? await _context.Clientes.FirstOrDefaultAsync(item => item.Correo == correo, cancellationToken)
+            : await _context.Clientes.FirstOrDefaultAsync(item => item.IdCliente == registeredClient.IdCliente, cancellationToken);
 
         if (cliente is null)
         {
@@ -745,6 +768,19 @@ public sealed class ReservasController : Controller
                 .Select(hora => new { Value = hora.ToString("HH:mm"), Text = hora.ToString("HH:mm") }),
             "Value",
             "Text");
+    }
+
+    private async Task<Cliente?> GetCurrentClientAsync(CancellationToken cancellationToken)
+    {
+        if (!Request.Cookies.TryGetValue("Mikuy.ClienteId", out var value) ||
+            !int.TryParse(value, out var clienteId))
+        {
+            return null;
+        }
+
+        return await _context.Clientes
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.IdCliente == clienteId, cancellationToken);
     }
 
     private async Task<Mesa?> FindAvailableMesaAsync(

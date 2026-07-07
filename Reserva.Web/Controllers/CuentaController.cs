@@ -68,11 +68,16 @@ public sealed class CuentaController : Controller
     }
 
     [HttpPost]
-    [Authorize]
+    [AllowAnonymous]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
-        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        if (User.Identity?.IsAuthenticated == true)
+        {
+            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        }
+
+        Response.Cookies.Delete("Mikuy.ClienteId");
         return RedirectToAction("Index", "Home");
     }
 }
