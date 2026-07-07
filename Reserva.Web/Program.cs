@@ -17,9 +17,7 @@ if (!string.IsNullOrWhiteSpace(railwayPort))
     builder.WebHost.UseUrls($"http://0.0.0.0:{railwayPort}");
 }
 
-var connectionString = BuildPostgresConnectionString(
-    Environment.GetEnvironmentVariable("DATABASE_URL"))
-    ?? builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = GetPostgresConnectionString(builder.Configuration, builder.Environment);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
@@ -104,11 +102,61 @@ app.MapControllerRoute(
 
 app.Run();
 
+static string GetPostgresConnectionString(IConfiguration configuration, IWebHostEnvironment environment)
+{
+    var databaseUrl = FirstEnvironmentValue(
+        "DATABASE_URL",
+        "DATABASE_PRIVATE_URL",
+        "POSTGRES_URL",
+        "POSTGRESQL_URL");
+
+    var fromUrl = BuildPostgresConnectionString(databaseUrl);
+    if (!string.IsNullOrWhiteSpace(fromUrl))
+    {
+        return fromUrl;
+    }
+
+    var fromVariables = BuildPostgresConnectionStringFromVariables();
+    if (!string.IsNullOrWhiteSpace(fromVariables))
+    {
+        return fromVariables;
+    }
+
+    var configured = configuration.GetConnectionString("DefaultConnection");
+    if (environment.IsProduction() && IsLocalhostConnection(configured))
+    {
+        throw new InvalidOperationException(
+            "No se encontro una conexion PostgreSQL para produccion. En Railway agregue un servicio PostgreSQL y configure DATABASE_URL o las variables PGHOST, PGPORT, PGDATABASE, PGUSER y PGPASSWORD en el servicio web.");
+    }
+
+    return configured ?? throw new InvalidOperationException("No se encontro una cadena de conexion PostgreSQL.");
+}
+
+static string? FirstEnvironmentValue(params string[] names)
+{
+    foreach (var name in names)
+    {
+        var value = Environment.GetEnvironmentVariable(name);
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            return value;
+        }
+    }
+
+    return null;
+}
+
 static string? BuildPostgresConnectionString(string? databaseUrl)
 {
     if (string.IsNullOrWhiteSpace(databaseUrl))
     {
         return null;
+    }
+
+    if (!databaseUrl.StartsWith("postgres://", StringComparison.OrdinalIgnoreCase) &&
+        !databaseUrl.StartsWith("postgresql://", StringComparison.OrdinalIgnoreCase))
+    {
+        return databaseUrl;
     }
 
     var uri = new Uri(databaseUrl);
@@ -124,6 +172,47 @@ static string? BuildPostgresConnectionString(string? databaseUrl)
         Database = database,
         Username = username,
         Password = password,
-        SslMode = Npgsql.SslMode.Require
+        SslMode = Npgsql.SslMode.Prefer
     }.ConnectionString;
+}
+
+static string? BuildPostgresConnectionStringFromVariables()
+{
+    var host = FirstEnvironmentValue("PGHOST", "POSTGRES_HOST");
+    var database = FirstEnvironmentValue("PGDATABASE", "POSTGRES_DB", "POSTGRES_DATABASE");
+    var username = FirstEnvironmentValue("PGUSER", "POSTGRES_USER");
+    var password = FirstEnvironmentValue("PGPASSWORD", "POSTGRES_PASSWORD");
+
+    if (string.IsNullOrWhiteSpace(host) ||
+        string.IsNullOrWhiteSpace(database) ||
+        string.IsNullOrWhiteSpace(username))
+    {
+        return null;
+    }
+
+    var portValue = FirstEnvironmentValue("PGPORT", "POSTGRES_PORT");
+    var port = int.TryParse(portValue, out var parsedPort) ? parsedPort : 5432;
+
+    return new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host = host,
+        Port = port,
+        Database = database,
+        Username = username,
+        Password = password,
+        SslMode = Npgsql.SslMode.Prefer
+    }.ConnectionString;
+}
+
+static bool IsLocalhostConnection(string? connectionString)
+{
+    if (string.IsNullOrWhiteSpace(connectionString))
+    {
+        return false;
+    }
+
+    var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+    return string.Equals(builder.Host, "localhost", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(builder.Host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(builder.Host, "::1", StringComparison.OrdinalIgnoreCase);
 }

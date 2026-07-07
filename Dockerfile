@@ -9,15 +9,13 @@ RUN dotnet restore Reserva.Web/Reserva.Web.csproj
 
 COPY . .
 
-RUN dotnet publish Reserva.Web/Reserva.Web.csproj \
-    --configuration Release \
-    --no-restore \
-    --output /app/publish
+RUN dotnet publish Reserva.Web/Reserva.Web.csproj --configuration Release --no-restore --output /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 ENV ASPNETCORE_ENVIRONMENT=Production
+EXPOSE 8080
 
 COPY --from=build /app/publish .
 
