@@ -1,0 +1,15 @@
+.git
+.github
+.vs
+.agents
+**/bin
+**/obj
+TestResults
+**/TestResults
+*.user
+*.suo
+*.tmp
+*.log
+docs
+README.md
+docker-compose.yml
