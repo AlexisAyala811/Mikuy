@@ -50,9 +50,9 @@ builder.Services.AddRateLimiter(options =>
             }));
 });
 builder.Services.AddDbContext<ReservationDbContext>(options =>
-    options.UseSqlServer(
+    options.UseNpgsql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
-        sqlServerOptions => sqlServerOptions.EnableRetryOnFailure()));
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure()));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IReservationNotificationService, ReservationNotificationService>();

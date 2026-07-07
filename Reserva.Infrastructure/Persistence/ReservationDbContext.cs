@@ -68,7 +68,7 @@ public sealed class ReservationDbContext : DbContext
         {
             entity.ToTable("Reservas", table =>
             {
-                table.HasCheckConstraint("CK_Reservas_Estado", "[Estado] IN ('Pendiente', 'Confirmada', 'Cancelada')");
+                table.HasCheckConstraint("CK_Reservas_Estado", "\"Estado\" IN ('Pendiente', 'Confirmada', 'Cancelada')");
             });
 
             entity.HasKey(reserva => reserva.IdReserva);
@@ -86,7 +86,7 @@ public sealed class ReservationDbContext : DbContext
 
             entity.Property(reserva => reserva.Hora)
                 .IsRequired()
-                .HasPrecision(0);
+                .HasColumnType("time(0) without time zone");
 
             entity.Property(reserva => reserva.Estado)
                 .IsRequired()
@@ -118,7 +118,7 @@ public sealed class ReservationDbContext : DbContext
 
             entity.HasIndex(reserva => new { reserva.IdMesa, reserva.Fecha, reserva.Hora })
                 .IsUnique()
-                .HasFilter("[Estado] <> 'Cancelada'")
+                .HasFilter("\"Estado\" <> 'Cancelada'")
                 .HasDatabaseName("UX_Reservas_Mesa_Fecha_Hora");
 
             entity.HasIndex(reserva => reserva.Estado);

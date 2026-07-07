@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: mikuy-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: mikuy_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - mikuy-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  mikuy-postgres-data:

@@ -174,29 +174,8 @@ public static class DataSeeder
             return;
         }
 
-        var hasLegacyRestaurantColumn = await context.Database
-            .SqlQueryRaw<int>("SELECT CASE WHEN COL_LENGTH('dbo.Mesas', 'IdRestaurante') IS NULL THEN 0 ELSE 1 END AS [Value]")
-            .SingleAsync(cancellationToken) == 1;
-
-        if (!hasLegacyRestaurantColumn)
-        {
-            await context.Mesas.AddRangeAsync(mesasFaltantes, cancellationToken);
-            await context.SaveChangesAsync(cancellationToken);
-            return;
-        }
-
-        // Some existing local databases retain this mandatory legacy column.
-        // Reuse the restaurant associated with the current tables while the model remains single-restaurant.
-        var restaurantId = await context.Database
-            .SqlQueryRaw<int>("SELECT TOP (1) [IdRestaurante] AS [Value] FROM [Mesas] ORDER BY [IdMesa]")
-            .SingleAsync(cancellationToken);
-
-        foreach (var mesa in mesasFaltantes)
-        {
-            await context.Database.ExecuteSqlInterpolatedAsync(
-                $"INSERT INTO [Mesas] ([Numero], [Capacidad], [Ubicacion], [Activa], [IdRestaurante]) VALUES ({mesa.Numero}, {mesa.Capacidad}, {mesa.Ubicacion}, {mesa.Activa}, {restaurantId})",
-                cancellationToken);
-        }
+        await context.Mesas.AddRangeAsync(mesasFaltantes, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private static async Task NormalizeMesasAsync(ReservationDbContext context, CancellationToken cancellationToken)
