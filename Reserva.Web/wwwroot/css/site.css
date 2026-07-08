@@ -4235,14 +4235,14 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
 
   .container,
   .container-fluid {
-    padding-left: 1.15rem;
-    padding-right: 1.15rem;
+    padding-left: 1.35rem;
+    padding-right: 1.35rem;
   }
 
   .mikuy-header .navbar {
     min-height: 4.85rem;
-    padding-left: 1.15rem;
-    padding-right: 1.15rem;
+    padding-left: 1.35rem;
+    padding-right: 1.35rem;
   }
 
   .mikuy-brand {
@@ -4276,11 +4276,12 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
 
   .hero-copy {
     max-width: min(100%, 32rem);
-    padding: 4.6rem 0 5rem;
+    padding: 4.6rem 1.15rem 5rem;
   }
 
   .home-hero-nav .hero-copy {
     padding-top: 7rem;
+    width: 100%;
   }
 
   .hero-copy h1,
@@ -4292,17 +4293,19 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
   .hero-copy > p:not(.eyebrow) {
     font-size: clamp(1.12rem, 5.8vw, 1.36rem);
     line-height: 1.42;
-    max-width: 19rem;
+    max-width: min(100%, 21rem);
   }
 
   .hero-actions {
     gap: 0.9rem;
+    max-width: 100%;
   }
 
   .hero-proof {
     align-items: flex-start;
     display: grid;
     gap: 0.45rem;
+    max-width: 100%;
   }
 
   .hero-proof span {
@@ -4312,8 +4315,8 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
 
   .page-hero .container,
   .section-space {
-    padding-left: 1.15rem;
-    padding-right: 1.15rem;
+    padding-left: 1.35rem;
+    padding-right: 1.35rem;
   }
 
   .menu-page {
