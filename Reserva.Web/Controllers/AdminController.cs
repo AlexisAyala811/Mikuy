@@ -188,6 +188,42 @@ public sealed class AdminController : Controller
             ? $"Reserva {reserva.CodigoReserva} confirmada correctamente."
             : $"Reserva {reserva.CodigoReserva} cancelada correctamente.";
 
+        if (estado == EstadosReserva.Confirmada &&
+            !string.IsNullOrWhiteSpace(reserva.Cliente?.Telefono))
+        {
+            TempData["WhatsAppReservationId"] = reserva.IdReserva;
+            TempData["WhatsAppClientName"] = reserva.Cliente.Nombre;
+        }
+
         return RedirectToAction(nameof(Dashboard));
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> NotificarWhatsApp(int id, CancellationToken cancellationToken)
+    {
+        var reserva = await _context.Reservas
+            .AsNoTracking()
+            .Include(item => item.Cliente)
+            .Include(item => item.Mesa)
+            .FirstOrDefaultAsync(item => item.IdReserva == id, cancellationToken);
+
+        if (reserva is null)
+        {
+            return NotFound();
+        }
+
+        if (reserva.Estado != EstadosReserva.Confirmada)
+        {
+            TempData["Error"] = "Solo puede avisar por WhatsApp cuando la reserva este confirmada.";
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        if (string.IsNullOrWhiteSpace(reserva.Cliente?.Telefono))
+        {
+            TempData["Error"] = "El cliente no tiene un telefono disponible para WhatsApp.";
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        return Redirect(_notificationService.BuildWhatsAppUrl(reserva));
     }
 }

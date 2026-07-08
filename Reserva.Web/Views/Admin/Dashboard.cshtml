@@ -9,10 +9,35 @@
     var resultadosBusqueda = ViewBag.ResultadosBusqueda as IReadOnlyList<Reserva> ?? [];
     var estadoOperativo = ViewBag.EstadoOperativo as OperationalStatusViewModel ?? new OperationalStatusViewModel();
     var busquedaGlobal = ViewBag.BusquedaGlobal as string ?? string.Empty;
+    var whatsappReservationId = TempData["WhatsAppReservationId"] is int reservationId
+        ? reservationId
+        : (int?)null;
+    var whatsappClientName = TempData["WhatsAppClientName"] as string;
     var diasCalendario = Enumerable.Range(0, 7).Select(offset => DateOnly.FromDateTime(DateTime.Today).AddDays(offset)).ToList();
 }
 
 <section class="container admin-dashboard">
+    @if (whatsappReservationId.HasValue)
+    {
+        <aside class="admin-whatsapp-notice" role="status">
+            <div>
+                <span class="admin-whatsapp-notice-icon" aria-hidden="true">WA</span>
+                <div>
+                    <strong>Reserva confirmada</strong>
+                    <p>Avise a @whatsappClientName que su mesa esta preparada.</p>
+                </div>
+            </div>
+            <a asp-controller="Admin"
+               asp-action="NotificarWhatsApp"
+               asp-route-id="@whatsappReservationId.Value"
+               target="_blank"
+               rel="noopener"
+               class="btn btn-success">
+                Avisar al cliente por WhatsApp
+            </a>
+        </aside>
+    }
+
     <section class="global-search-panel" aria-label="Busqueda global">
         <form asp-controller="Admin" asp-action="Dashboard" method="get" class="global-search-form">
             <label class="visually-hidden" for="globalDashboardSearch">Buscar cliente, reserva o codigo</label>

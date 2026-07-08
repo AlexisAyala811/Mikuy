@@ -12,6 +12,15 @@
             <p class="text-muted mb-0">@Model.Hora.ToString("HH:mm") - @Model.ClienteNombre</p>
         </div>
         <div class="detail-actions">
+            @if (!string.IsNullOrWhiteSpace(Model.WhatsAppUrl))
+            {
+                <a asp-controller="Admin"
+                   asp-action="NotificarWhatsApp"
+                   asp-route-id="@Model.IdReserva"
+                   target="_blank"
+                   rel="noopener"
+                   class="btn btn-success">Avisar por WhatsApp</a>
+            }
             <a asp-action="Comprobante" asp-route-id="@Model.IdReserva" class="btn btn-outline-dark">PDF</a>
             <a asp-action="Edit" asp-route-id="@Model.IdReserva" class="btn btn-primary">Editar</a>
         </div>

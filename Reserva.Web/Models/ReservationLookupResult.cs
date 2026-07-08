@@ -24,7 +24,5 @@ public sealed class ReservationLookupResult
 
     public string? Comentario { get; set; }
 
-    public string WhatsAppUrl { get; set; } = string.Empty;
-
     public bool CanCancel { get; set; }
 }

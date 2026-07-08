@@ -88,10 +88,6 @@
                         <div class="d-flex flex-wrap gap-2 mt-3">
                             <button type="button" class="btn btn-outline-dark btn-sm" data-copy-text="@reserva.CodigoReserva">Copiar codigo</button>
                             <a asp-action="Comprobante" asp-route-id="@reserva.IdReserva" asp-route-code="@reserva.CodigoReserva" class="btn btn-outline-dark btn-sm">PDF</a>
-                            @if (reserva.Estado is "Confirmada" or "Cancelada")
-                            {
-                                <a href="@reserva.WhatsAppUrl" target="_blank" rel="noopener" class="btn btn-success btn-sm">WhatsApp</a>
-                            }
                             @if (reserva.CanCancel)
                             {
                                 <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#cancelReservationModal-@reserva.IdReserva">

@@ -113,7 +113,12 @@ public sealed class ReservasController : Controller
             return NotFound();
         }
 
-        return View(_mapper.Map<ReservaDto>(reserva));
+        var dto = _mapper.Map<ReservaDto>(reserva);
+        dto.WhatsAppUrl = reserva.Estado == EstadosReserva.Confirmada
+            ? _notificationService.BuildWhatsAppUrl(reserva)
+            : null;
+
+        return View(dto);
     }
 
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
@@ -568,7 +573,6 @@ public sealed class ReservasController : Controller
             ClienteNombre = reserva.Cliente?.Nombre ?? string.Empty,
             ClienteCorreo = reserva.Cliente?.Correo ?? string.Empty,
             ClienteTelefono = reserva.Cliente?.Telefono ?? string.Empty,
-            WhatsAppUrl = _notificationService.BuildWhatsAppUrl(reserva),
             Fecha = reserva.Fecha,
             Hora = reserva.Hora,
             Estado = reserva.Estado,

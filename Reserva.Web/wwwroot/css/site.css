@@ -1569,6 +1569,53 @@ button:focus-visible {
   margin-top: 2.4rem;
 }
 
+.admin-whatsapp-notice {
+  align-items: center;
+  background: #edf8f1;
+  border: 1px solid #a9d9bd;
+  border-left: 4px solid #198754;
+  box-shadow: 0 10px 24px rgba(43, 28, 23, 0.08);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  padding: 1rem 1.15rem;
+}
+
+.admin-whatsapp-notice > div {
+  align-items: center;
+  display: flex;
+  gap: 0.85rem;
+}
+
+.admin-whatsapp-notice-icon {
+  background: #198754;
+  border-radius: 50%;
+  color: #fff;
+  display: grid;
+  flex: 0 0 2.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  height: 2.5rem;
+  place-items: center;
+  width: 2.5rem;
+}
+
+.admin-whatsapp-notice p {
+  color: #4d5f52;
+  margin: 0.15rem 0 0;
+}
+
+@media (max-width: 767.98px) {
+  .admin-whatsapp-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-whatsapp-notice .btn {
+    width: 100%;
+  }
+}
+
 .section-heading,
 .page-heading {
   align-items: end;

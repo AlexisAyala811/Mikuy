@@ -216,3 +216,5 @@ static bool IsLocalhostConnection(string? connectionString)
            string.Equals(builder.Host, "127.0.0.1", StringComparison.OrdinalIgnoreCase) ||
            string.Equals(builder.Host, "::1", StringComparison.OrdinalIgnoreCase);
 }
+
+public partial class Program;

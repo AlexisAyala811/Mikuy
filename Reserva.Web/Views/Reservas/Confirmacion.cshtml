@@ -31,9 +31,8 @@
                  data-email="@Model.ClienteCorreo"
                  data-date="@Model.Fecha.ToString("yyyy-MM-dd")"
                  data-time="@Model.Hora.ToString("HH:mm")"
-                 data-status="@Model.Estado">
+                data-status="@Model.Estado">
                 <button type="button" class="btn btn-accent" data-copy-text="@Model.CodigoReserva">Copiar codigo</button>
-                <a href="@Model.WhatsAppUrl" target="_blank" rel="noopener" class="btn btn-success">Enviar por WhatsApp</a>
                 <a href="@mailToUrl" class="btn btn-outline-light">Enviar al correo</a>
                 <a asp-action="Consultar" asp-route-codigoReserva="@Model.CodigoReserva" class="btn btn-outline-light">Ver mi reserva</a>
             </div>

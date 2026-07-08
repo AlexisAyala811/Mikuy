@@ -156,7 +156,6 @@ public sealed class ReservationNotificationService : IReservationNotificationSer
             CantidadPersonas = reserva.CantidadPersonas,
             MesaDescripcion = reserva.Mesa is null ? string.Empty : $"Mesa {reserva.Mesa.Numero} - {reserva.Mesa.Ubicacion}",
             Comentario = reserva.Comentario,
-            WhatsAppUrl = BuildWhatsAppUrl(reserva),
             CanCancel = CanCustomerCancel(reserva)
         };
     }
