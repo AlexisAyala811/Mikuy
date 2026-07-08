@@ -1589,6 +1589,43 @@ button:focus-visible {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.menu-empty-state {
+  background:
+    linear-gradient(135deg, rgba(255, 253, 248, 0.94), rgba(255, 236, 204, 0.9)),
+    radial-gradient(circle at 92% 10%, rgba(217, 130, 43, 0.18), transparent 15rem);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  color: var(--ink);
+  margin-inline: auto;
+  max-width: 720px;
+  padding: clamp(1.4rem, 4vw, 2.5rem);
+}
+
+.menu-empty-state h2 {
+  color: var(--clay);
+  font-size: clamp(1.7rem, 4vw, 2.7rem);
+  font-weight: 900;
+  line-height: 1.05;
+  margin: 0 0 0.75rem;
+}
+
+.menu-empty-state p:not(.eyebrow) {
+  color: var(--muted);
+  margin-bottom: 1.2rem;
+  max-width: 560px;
+}
+
+.menu-empty-state a {
+  background: var(--clay);
+  border-radius: var(--radius);
+  color: #fff8ed;
+  display: inline-flex;
+  font-weight: 900;
+  padding: 0.78rem 1rem;
+  text-decoration: none;
+}
+
 .dish-card,
 .page-shell,
 .metric-card {
@@ -4191,6 +4228,34 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
 }
 
 @media (max-width: 575.98px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+
+  .container,
+  .container-fluid {
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+
+  .mikuy-header .navbar {
+    min-height: 4.85rem;
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+
+  .mikuy-brand {
+    font-size: clamp(1.85rem, 9vw, 2.35rem);
+    max-width: calc(100vw - 7.4rem);
+  }
+
+  .navbar-toggler {
+    flex: 0 0 auto;
+    min-height: 3.25rem;
+    min-width: 3.25rem;
+  }
+
   .dish-grid,
   .culture-stories,
   .dashboard-grid,
@@ -4210,11 +4275,76 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
   }
 
   .hero-copy {
-    padding: 4rem 0;
+    max-width: min(100%, 32rem);
+    padding: 4.6rem 0 5rem;
   }
 
   .home-hero-nav .hero-copy {
-    padding-top: 6.5rem;
+    padding-top: 7rem;
+  }
+
+  .hero-copy h1,
+  .page-hero h1 {
+    font-size: clamp(3.4rem, 17vw, 4.6rem);
+    line-height: 0.96;
+  }
+
+  .hero-copy > p:not(.eyebrow) {
+    font-size: clamp(1.12rem, 5.8vw, 1.36rem);
+    line-height: 1.42;
+    max-width: 19rem;
+  }
+
+  .hero-actions {
+    gap: 0.9rem;
+  }
+
+  .hero-proof {
+    align-items: flex-start;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .hero-proof span {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .page-hero .container,
+  .section-space {
+    padding-left: 1.15rem;
+    padding-right: 1.15rem;
+  }
+
+  .menu-page {
+    padding-bottom: 3rem;
+    padding-top: 3.2rem;
+  }
+
+  .category-tabs {
+    gap: 0.55rem;
+    margin-bottom: 1.3rem;
+    overflow-x: auto;
+    padding-bottom: 0.35rem;
+    scroll-padding-left: 1.15rem;
+  }
+
+  .category-tabs a {
+    flex: 0 0 auto;
+  }
+
+  .menu-category {
+    margin-top: 1.8rem;
+  }
+
+  .section-heading,
+  .page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .dish-card {
+    min-width: 0;
   }
 
   .global-search-form {
@@ -4327,6 +4457,12 @@ body.mikuy-warm-page .lookup-result-card .btn-outline-dark:focus {
     justify-content: center;
     left: auto;
     right: 0.85rem;
+  }
+
+  .scroll-reveal,
+  .scroll-stagger-item {
+    opacity: 1;
+    transform: none;
   }
 }
 

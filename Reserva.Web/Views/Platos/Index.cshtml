@@ -16,37 +16,49 @@
 </section>
 
 <section class="container section-space">
-    <nav class="category-tabs" aria-label="Categorias del menu">
+    @if (categorias.Count == 0)
+    {
+        <div class="menu-empty-state">
+            <p class="eyebrow">Menu en preparacion</p>
+            <h2>Estamos actualizando los platos de Mikuy</h2>
+            <p>Vuelva en unos minutos o escribanos por WhatsApp para conocer las opciones disponibles de hoy.</p>
+            <a asp-controller="Reservas" asp-action="Reservar">Reservar una mesa</a>
+        </div>
+    }
+    else
+    {
+        <nav class="category-tabs" aria-label="Categorias del menu">
+            @foreach (var categoria in categorias)
+            {
+                <a href="#categoria-@categoria.Key.ToLowerInvariant().Replace(" ", "-")">@categoria.Key</a>
+            }
+        </nav>
+
         @foreach (var categoria in categorias)
         {
-            <a href="#categoria-@categoria.Key.ToLowerInvariant().Replace(" ", "-")">@categoria.Key</a>
+            <div class="menu-category" id="categoria-@categoria.Key.ToLowerInvariant().Replace(" ", "-")">
+                <div class="section-heading compact">
+                    <h2>@categoria.Key</h2>
+                    <span>@categoria.Count() opciones</span>
+                </div>
+                <div class="dish-grid menu-grid">
+                    @foreach (var plato in categoria)
+                    {
+                        <article class="dish-card">
+                            <img src="@plato.ImagenUrl" alt="@plato.Nombre" loading="lazy" />
+                            <a class="dish-card-action" asp-controller="Reservas" asp-action="Reservar">Reservar</a>
+                            <div>
+                                <span>@plato.Categoria</span>
+                                <h2>@plato.Nombre</h2>
+                                <p>@plato.Descripcion</p>
+                                <footer>
+                                    <a asp-controller="Reservas" asp-action="Reservar">Reservar</a>
+                                </footer>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </div>
         }
-    </nav>
-
-    @foreach (var categoria in categorias)
-    {
-        <div class="menu-category" id="categoria-@categoria.Key.ToLowerInvariant().Replace(" ", "-")">
-            <div class="section-heading compact">
-                <h2>@categoria.Key</h2>
-                <span>@categoria.Count() opciones</span>
-            </div>
-            <div class="dish-grid menu-grid">
-                @foreach (var plato in categoria)
-                {
-                    <article class="dish-card">
-                        <img src="@plato.ImagenUrl" alt="@plato.Nombre" loading="lazy" />
-                        <a class="dish-card-action" asp-controller="Reservas" asp-action="Reservar">Reservar</a>
-                        <div>
-                            <span>@plato.Categoria</span>
-                            <h2>@plato.Nombre</h2>
-                            <p>@plato.Descripcion</p>
-                            <footer>
-                                <a asp-controller="Reservas" asp-action="Reservar">Reservar</a>
-                            </footer>
-                        </div>
-                    </article>
-                }
-            </div>
-        </div>
     }
 </section>
